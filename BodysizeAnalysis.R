@@ -1,6 +1,8 @@
 library(ggplot2)
 library(sjPlot)
 library(patchwork)
+library(tidyr)
+library(reshape2)
 
 #load data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
@@ -121,14 +123,16 @@ dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","s
 gp= c("Eritettix simplex","Xanthipus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
 bs.sub$gp= gp[match(bs.sub$Species, specs)]
 bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
-  
+#drop sites without phenology data
+bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
+
 #subset
 dat= subset(dat, dat$species %in% gp)
 
 #match phenology to body size
 match1= match(bs.sub$spsiteyear, dat$spsiteyear)
 #check
-#bs.sub$spsiteyear[is.na(match1)]
+unmatched= unique(bs.sub$spsiteyear[is.na(match1)])
 
 #estimate of doy_adult, gdd_adult
 bs1= merge(bs.sub, dat,
@@ -150,5 +154,26 @@ plot.doy+plot.gdd
 #------
 #stats
 mod1= lm(Mean_Femur~doy_adult*species*site, data=bs1)
+
+#-----
+#plot as change body size, change phenology?
+agg= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$time, bs1$elev), FUN="mean", na.rm = TRUE)
+names(agg)[1:4]=c("Species", "Sites", "time", "elev")
+
+#compare historic and current
+dm <- melt(agg, measure.vars = c("Mean_Femur","doy_adult","gdd_adult"))
+agg.w= dcast(dm, Species + Sites + elev ~ variable+time, mean, value.var = "value")
+
+#differences
+agg.w$d.size= agg.w$Mean_Femur_current - agg.w$Mean_Femur_historic
+agg.w$d.doy= agg.w$doy_adult_current - agg.w$doy_adult_historic
+agg.w$d.gdd= agg.w$gdd_adult_current - agg.w$gdd_adult_historic
+
+#plot
+ggplot(data=agg.w, aes(x=d.doy, y=d.size))+geom_point(aes(shape=Species,color=Sites))+ 
+  geom_vline(xintercept = 0)+geom_hline(yintercept = 0) #+geom_smooth(method="lm")
+
+ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(shape=Sites, color=Species))+ 
+  geom_vline(xintercept = 0)+geom_hline(yintercept = 0)
 
 
