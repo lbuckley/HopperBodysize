@@ -6,7 +6,7 @@ library(reshape2)
 
 #load data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
-bs= read.csv("Grasshopper_processed.csv")
+bs= read.csv("GrasshopperSize_processed.csv")
 
 #add time period
 bs$time="historic"
@@ -120,11 +120,11 @@ dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
 dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","spsiteyear","doy_adult","gdd_adult")]
 
 #match to body size data
-gp= c("Eritettix simplex","Xanthipus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
+gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
 bs.sub$gp= gp[match(bs.sub$Species, specs)]
 bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
 #drop sites without phenology data
-bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
+#bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
 
 #subset
 dat= subset(dat, dat$species %in% gp)
@@ -133,6 +133,8 @@ dat= subset(dat, dat$species %in% gp)
 match1= match(bs.sub$spsiteyear, dat$spsiteyear)
 #check
 unmatched= unique(bs.sub$spsiteyear[is.na(match1)])
+
+unique(dat.all[which(dat.all$species=="Eritettix simplex"),"spsiteyear"])
 
 #estimate of doy_adult, gdd_adult
 bs1= merge(bs.sub, dat,
