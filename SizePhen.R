@@ -202,7 +202,17 @@ mod1= lm(d.size~d.doy*Sites*Species, data=bs.sub)
 mod1= lm(d.size~d.doy*elev*Species, data=bs.sub)
 anova(mod1)
 
+plot_model(mod1, type="pred",terms=c("d.doy","Sites","Species"), show.data=TRUE)
 plot_model(mod1, type="pred",terms=c("d.doy","elev","Species"), show.data=TRUE)
+
+#E. simplex: bigger earlier at high elevation site
+#X. corallipes: bigger earlier at low elevation, bigger later at high elevation
+#A. clavatus: little change
+#M. bouldernsis and C. pellucida: bigger later at low elevation
+#M. sanguinipes: bigger earlier
+
+
+
 
 
 
