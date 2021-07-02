@@ -53,17 +53,29 @@ ggplot(data=bs, aes(x=Mean_Femur, y = Mass, color=Sites, shape=Sex)) +
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
 mus= read.csv("AlexanderSpecimens2021.csv")
 
-mus1= mus[,c("SpeciesName","LocalityCode","DateCollected","Elevation..m.")]
+#fix elevation
+mus$Elevation_m_low= as.numeric(mus$Elevation_m_low)
+mus$Elevation_m_up= as.numeric(mus$Elevation_m_up)
+mus$elev= mus$Elevation_m_low
+
+inds= !is.na(mus$Elevation_m_up)
+mus$elev[inds]= (mus$Elevation_m_low[inds]+mus$Elevation_m_up[inds])/2
+
+mus1= mus[,c("SpeciesName","LocalityCode","DateCollected","Elevation..m.","elev")]
+
+#mus1= mus1[which(mus1$elev %in% c(2195, 2591, 3048) ),]
 
 #species
-specs=c("simplex","corallipes","calvatus","dodgei","pellucida","sanguinipes")
+specs=c("simplex","corallipes","clavatus","dodgei","pellucida","sanguinipes")
 
 mus1= mus1[which(mus1$SpeciesName %in% specs),]
 
 #sites
-locs= c("us_co_uofcolo.a-1.7000","us_co_uofcolo.a-1.2195","us_co_uofcolo.b-1.8500",
+locs= c("us_co_boulder.2S.bureau.","us_co_uofcolo.a-1.7000","us_co_uofcolo.a-1.7200","us_co_uofcolo.a-1.2195","us_co_uofcolo.b-1.8500",
 "us_co_uofcolo.b-1.W.8500", "us_co_uofcolo.b-1.1.5w","us_co_uofcolo.d-1.12280", 
-"us_co_uofcolo.d-1.3499","us_co_uofcolo.c-1.10000","us_co_uofcolo.c-1.elk.10000")
+"us_co_uofcolo.d-1.3499","us_co_uofcolo.c-1.10000","us_co_uofcolo.c-1.elk.10000","us_co_elk.meadows.mrs.3048",
+"us_co_rollins.pass.11700", "us_co_rollins.pass.rd.9.2mi", "us_co_mt.evans.12300.sumL.2N",
+"us_co_mt.evans.12750.sumL", "us_co_mt.evans.12100.goliath")
 
 mus1= mus1[which(mus1$LocalityCode %in% locs),]
 
@@ -78,3 +90,13 @@ mus1$period[mus1$year>1990]= "resurvey"
 
 #summary
 table(mus1[,c("SpeciesName","Elevation..m.","period")]) #"LocalityCode",
+#more historical data available
+#Chataqua? Can't find. Maybe us_co_boulder.2S.bureau.
+#A1: simplex, sanguinipes
+#B1: simplex, sanguinipes
+#C1: pellucida
+#Rollins: clavatus
+#Mt. Evans: ?
+
+
+
