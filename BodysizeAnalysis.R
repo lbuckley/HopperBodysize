@@ -58,10 +58,10 @@ specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pelluc
 
 bs.sub= subset(bs.sub, bs.sub$Species %in% specs)
 
-#drop data without historic , current match
-bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(3414,3901) ),]
-bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768) ),]
-bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
+##drop data without historic , current match
+#bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(3414,3901) ),]
+#bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768) ),]
+#bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
 
 #order factors
 bs.sub$Sex= factor(bs.sub$Sex, order=TRUE, levels=c("F","M"))
