@@ -23,9 +23,32 @@ bs= bs[-which(bs$Project_info=="EggCollectionScanned"),]
 bs= bs[-which(bs$Project_info=="BuckleyPhys"),]
 
 #----------
+#Summer 2021 Additions
+#Note from Cesar to "Look for Connor Data" to replace NAs
+#Check elevation for meters
+#Check whether "Allie Remeasure", "Gabe Body size" is duplicate; Doesn't seem to be 
+
+#REPLACE A. clavatus survey
+bs= bs[-which(bs$Project_info=="A. clavatus survey"),]
+
+#Add new specimens
+bs.add= read.csv("GrasshopperSize_add_Summer2021.csv")
+#combine
+bs= rbind(bs, bs.add[,1:15])
+
+#CHECK DATA
+#Fix species names
+sort(unique(bs$Species))
+bs[which(bs$Species=="A. Clavatus" ),"Species"]="A. clavatus"
+
+#Write out data
+write.csv(bs, "BodySize_all_Aug2021.csv")
+#----------
 
 #add time period
+#assign year for delineation
 bs$Year[bs$Year=="historic"]=1900
+bs$Year[bs$Year=="current"]=2010
 bs$time="historic"
 bs$time[which(as.numeric(bs$Year)>2000)]<-"current"
 
@@ -33,11 +56,19 @@ bs$time[which(as.numeric(bs$Year)>2000)]<-"current"
 sites= read.csv("HopperSites.csv") 
 
 #align names
+bs$Sites=trimws(bs$Sites)
+
+bs$Sites[grep("Eldorado", bs$Sites)]<-"Eldorado Trail OSMP/ S. mesa trail"
+bs$Sites[grep("Chautauqua", bs$Sites)]<-"Chautauqua Mesa"
+bs$Sites[grep("B1", bs$Sites)]<-"B1"
+bs$Sites[grep("C1", bs$Sites)]<-"C1"
+bs$Sites[grep("D1", bs$Sites)]<-"Niwot Ridge (D1)"
+bs$Sites[grep("Chicken Ranch", bs$Sites)]<-"Chicken Ranch Gulch"
+bs$Sites[grep("Baldy", bs$Sites)]<-"Baldy Mountain" #Check whether two Baldys
+
 bs$Sites[bs$Sites=="Ft. Collins"]<-"Kingfisher"
-bs$Sites[bs$Sites=="Eldorado/ Mesa Trail"]<-"Eldorado Trail OSMP/ S. Mesa Trail"
 bs$Sites[bs$Sites=="Red Fox Hills"]<-"Red Fox"
-bs$Sites[bs$Sites=="Below C1"]<-"C1"
-bs$Sites[bs$Sites=="D1"]<-"Niwot Ridge (D1)"
+bs$Sites[bs$Sites=="Rollins pass"]<-"Rollin's Pass"
 
 #combine Rollin's and Mt. Evans sites?
 bs$Sites[bs$Sites=="Rollin's Pass (above treeline)"]<-"Rollin's Pass"
@@ -48,9 +79,15 @@ bs$Sites[bs$Sites=="Summit Lake (above treeline)"]<-"Summit lake"
 #add elevation
 bs$elev= sites$elevation[match(bs$Sites, sites$Site)]
 
+#add reported elevations
+elevs= rowMeans(bs[,c("Elevation_low","Elevation_upper")],na.rm=TRUE)
+inds= which(!is.na(elevs))
+bs$elev[inds]=elevs[inds]
+
 #subset elevations
 elevs.keep= c(1768,2134,2591,3048,3414, 3566, 3901)
 bs.sub= subset(bs, bs$elev %in% elevs.keep)
+#bs.sub=bs
 
 #species by seasonal timing
 specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
@@ -66,7 +103,6 @@ bs.sub= subset(bs.sub, bs.sub$Species %in% specs)
 #order factors
 bs.sub$Sex= factor(bs.sub$Sex, order=TRUE, levels=c("F","M"))
 bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
-#1862 specimens
 
 #explore data
 #full table
@@ -107,6 +143,7 @@ dev.off()
 
 #combined model
 bs.sub1= bs.sub[,c("Mean_Femur","time","elev","Sex","Species")]
+bs.sub1= na.omit(bs.sub1)
 
 mod1= lm(Mean_Femur~time*elev*Sex*Species, data=bs.sub1, na.action = "na.fail")
 plot_model(mod1, type="pred",terms=c("elev","time","Species","Sex"), show.data=TRUE)
