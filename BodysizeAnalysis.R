@@ -41,8 +41,22 @@ bs= rbind(bs, bs.add[,1:15])
 sort(unique(bs$Species))
 bs[which(bs$Species=="A. Clavatus" ),"Species"]="A. clavatus"
 
+#Add Sunshine Canyon speciemns
+sun.dat= read.csv("GrasshopperFemurLength_SunshineCanyon_2021.csv")
+sun.dat$Year="2021"
+sun.dat$Sites="Sunshine Canyon"
+sun.dat$Project_info= "collection"
+sun.dat$Specimen_No=NA; sun.dat$Barcode=NA;sun.dat$Mass=NA;sun.dat$Elevation_low=NA;sun.dat$Elevation_upper=NA
+sun.dat$Sex[sun.dat$Sex=="Male"]="M"; sun.dat$Sex[sun.dat$Sex=="Female"]="F"
+
+inds= match(names(bs),names(sun.dat))
+sun.dat1= sun.dat[inds]
+
+bs= rbind(bs, sun.dat1)
+
 #Write out data
 write.csv(bs, "BodySize_all_Aug2021.csv")
+
 #----------
 
 #add time period
@@ -84,25 +98,25 @@ elevs= rowMeans(bs[,c("Elevation_low","Elevation_upper")],na.rm=TRUE)
 inds= which(!is.na(elevs))
 bs$elev[inds]=elevs[inds]
 
-#subset elevations
-elevs.keep= c(1768,2134,2591,3048,3414, 3566, 3901)
-bs.sub= subset(bs, bs$elev %in% elevs.keep)
-#bs.sub=bs
+#order factors
+bs$Sex= factor(bs$Sex, order=TRUE, levels=c("F","M"))
 
 #species by seasonal timing
 specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
 #specs= c("A. clavatus","C. pellucida","E. simplex","M. boulderensis","M. sanguinipes","X. corallipes") 
 
-bs.sub= subset(bs.sub, bs.sub$Species %in% specs)
+bs.sub= subset(bs, bs$Species %in% specs)
+bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+
+#subset elevations
+elevs.keep= c(1768,2042,2134,2591,3048,3414,3505, 3566, 3901)
+bs.sub= subset(bs.sub, bs.sub$elev %in% elevs.keep)
 
 ##drop data without historic , current match
-#bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(3414,3901) ),]
-#bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768) ),]
-#bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
-
-#order factors
-bs.sub$Sex= factor(bs.sub$Sex, order=TRUE, levels=c("F","M"))
-bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,3414) ),]
 
 #explore data
 #full table
@@ -192,6 +206,8 @@ stats[,,4]= signif(stats[,,4],3)
 #stats.all=rbind(stats[1,,],stats[2,,],stats[3,,],stats[4,,],stats[5,,],stats[6,,])
 #write.csv(stats[,,4],"Table1.csv")
 
+stats[,,c(1,4)]
+
 #save coefficients
 #mo.p=summary(mod1)$coefficients
 #signif(), round()
@@ -206,73 +222,50 @@ curr= subset(bs.sub2, bs.sub2$time==c("current") )
 
 ks.test(hist$Mean_Femur,curr$Mean_Femur)
 
-#=======================================
-#relate to phenology
+#----------------------
+#Make elevation ordered factor
+spec.k=6
+  
+bs.sub1= bs.sub[which(bs.sub$Species==specs[spec.k]),]
+#bs.sub1$elev= factor(bs.sub1$elev, ordered = TRUE, levels=sort(unique(bs.sub1$elev)) )
+bs.sub1$Sex= factor(bs.sub1$Sex, ordered = FALSE)
 
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
-dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
+mod1= lm(Mean_Femur~time*elev*Sex, data=bs.sub1)
+Anova(mod1, type="III")
+summary(mod1)  
 
-#find unique spsiteyr
-dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","spsiteyear","doy_adult","gdd_adult")]
+#---------------------
+# #species summary
+# "E. simplex"      
+# Factor: smaller over time, time:elev= more curvature?
+# Linear: smaller over time
+# 
+# "X. corallipes"   
+# Factor: time:elev= now smaller at higher elevations
+# Linear: smaller over time, particularly at high elevation 
+#   
+# "A. clavatus"     
+# Factor: signif time, time:elev Q: less curvature?, time:sex= males bigger over time; timehistoric:elev.Q:SexM= smaller at low elevations, bigger at large  
+# Linear: ns
+#   
+# "M. boulderensis" 
+# Factor: time:elev
+# Linear: time:elev:Sex= female bigger low, smaller high; males smaller low
+#   
+# "C. pellucida"    
+# Factor: time:elev: smaller at low elevation
+# Linear: time:elev: smaller at low elevation
+# 
+# "M. sanguinipes" 
+# Factor: no significant shifts
+# Linear: ns
 
-#match to body size data
-gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
-bs.sub$gp= gp[match(bs.sub$Species, specs)]
-bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
-#drop sites without phenology data
-#bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
-
-#subset
-dat= subset(dat, dat$species %in% gp)
-
-#match phenology to body size
-match1= match(bs.sub$spsiteyear, dat$spsiteyear)
-#check
-unmatched= unique(bs.sub$spsiteyear[is.na(match1)])
-
-unique(dat.all[which(dat.all$species=="Eritettix simplex"),"spsiteyear"])
-
-#estimate of doy_adult, gdd_adult
-bs1= merge(bs.sub, dat,
-      by.x = "spsiteyear", by.y = "spsiteyear", all.x="TRUE")
-names(bs1)[which(names(bs1)=="doy_adult.y")]= "doy_adult"
-
-#plot relationship
-plot.doy= ggplot(data=bs1, aes(x=doy_adult, y=Mean_Femur, shape=species, color=Year))+ 
-  geom_point()+geom_smooth(method="lm")+theme_bw()+
-facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
-#, group_by=spsiteyear
-
-plot.gdd=ggplot(data=bs1, aes(x=gdd_adult, y=Mean_Femur, shape=species, color=Year))+ 
-  geom_point()+geom_smooth(method="lm")+theme_bw()+
-  facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
-
-#plot together
-plot.doy+plot.gdd
-
-#------
-#stats
-mod1= lm(Mean_Femur~doy_adult*species*site, data=bs1)
-
-#-----
-#plot as change body size, change phenology?
-agg= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$time, bs1$elev), FUN="mean", na.rm = TRUE)
-names(agg)[1:4]=c("Species", "Sites", "time", "elev")
-
-#compare historic and current
-dm <- melt(agg, measure.vars = c("Mean_Femur","doy_adult","gdd_adult"))
-agg.w= dcast(dm, Species + Sites + elev ~ variable+time, mean, value.var = "value")
-
-#differences
-agg.w$d.size= agg.w$Mean_Femur_current - agg.w$Mean_Femur_historic
-agg.w$d.doy= agg.w$doy_adult_current - agg.w$doy_adult_historic
-agg.w$d.gdd= agg.w$gdd_adult_current - agg.w$gdd_adult_historic
-
-#plot
-ggplot(data=agg.w, aes(x=d.doy, y=d.size))+geom_point(aes(shape=Species,color=Sites))+ 
-  geom_vline(xintercept = 0)+geom_hline(yintercept = 0) #+geom_smooth(method="lm")
-
-ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(shape=Sites, color=Species))+ 
-  geom_vline(xintercept = 0)+geom_hline(yintercept = 0)
+# larger at low elevation for nymphal diapausers: E. simplex, X. corallipes (smaller high)
+# smaller at low elevation: A. clavatus, C.pellucida
+# M. boulderensis: female bigger low, smaller high; males smaller low
+# M. sanguipes: no change
 
 
+
+
+ 
