@@ -176,7 +176,7 @@ mus1$period[mus1$Year>1990]= "resurvey"
 
 #summary
 table(mus1[,c("period","elev","Species")]) 
-table(mus1[,c("period","Sites","Species")])
+table(mus1[,c("Species","period","Sites")])
 
 table(mus1[,c("Sites","elev","Species")])
 
@@ -212,11 +212,16 @@ tab.sub= tab.sub[which(tab.rs>50),]
 #Baldy (3322m): A. clavatus, X. corallipes
 #Chicken Ranch Gulch (no longer viable?, 2042m): A. clavatus, M. boulderensis, X. corallipes
 #Mount Evans (3505, 3688, 3883, 3993 initial only, 33901 31 initial, 75 recent): A. clavatus
+#Buchanan Pass (tough to get to?): A. clavatus
 
 #Baldy Mountain	Boulder County	39.988	-105.61	3290
 #Up road 128 from Nederland
 
-
+#MUSEUM CHECK
+# Baldy Mountain: boulderensis
+# Mt. evans: boulderensis other than summit lake, sanguinipes
+# Pikes peak: clavatus, boulderensis (Ask Julian to collect modern?)
+# Sunshine: boulderensis, sanguinipes
 
 
 

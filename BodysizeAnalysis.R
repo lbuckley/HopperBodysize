@@ -36,6 +36,12 @@ bs.add= read.csv("GrasshopperSize_add_Summer2021.csv")
 #combine
 bs= rbind(bs, bs.add[,1:15])
 
+#add collected 2021 grasshoppers 
+#40.06193, -105.37569 2279m elevation, 5.9 miles west of Boulder on Sunshine Canyon Drive
+bs.meas= read.csv("GrasshopperFemurLength_SunshineCanyon_2021_format.csv")
+#combine
+bs= rbind(bs, bs.meas)
+
 #CHECK DATA
 #Fix species names
 sort(unique(bs$Species))
@@ -85,7 +91,7 @@ inds= which(!is.na(elevs))
 bs$elev[inds]=elevs[inds]
 
 #subset elevations
-elevs.keep= c(1768,2134,2591,3048,3414, 3566, 3901)
+elevs.keep= c(1768,2134,2591,3048,3414, 3566, 3901) #Add sunshine: 2317?
 bs.sub= subset(bs, bs$elev %in% elevs.keep)
 #bs.sub=bs
 
