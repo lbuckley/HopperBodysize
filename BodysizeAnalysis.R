@@ -107,21 +107,22 @@ bs$elev[inds]=elevs[inds]
 bs$Sex= factor(bs$Sex, order=TRUE, levels=c("F","M"))
 
 #species by seasonal timing
-specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
+#add A. conspersa?
+specs= c("A. conspersa", "E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
 #specs= c("A. clavatus","C. pellucida","E. simplex","M. boulderensis","M. sanguinipes","X. corallipes") 
 
 bs.sub= subset(bs, bs$Species %in% specs)
-bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("A. conspersa", "E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
 #subset elevations
-elevs.keep= c(1768,2042,2134,2591,3048,3414,3505, 3566, 3901)
+elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3901)
 bs.sub= subset(bs.sub, bs.sub$elev %in% elevs.keep)
 
 ##drop data without historic , current match
-bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042) ),]
-bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042) ),]
-bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
-bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,3414) ),]
+#bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042) ),]
+#bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042) ),]
+#bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
+#bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,3414) ),]
 
 #explore data
 #full table
@@ -134,6 +135,9 @@ tab1= cbind(tab[,1,,1],tab[,1,,2],tab[,2,,1],tab[,2,,2],tab[,3,,1],tab[,3,,2],ta
 #write out
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 write.csv(tab1,"Counts.csv")
+
+#Write out data
+write.csv(bs.sub, "BodySize_sub_Apr2022.csv")
 
 #------
 #scatter plot
