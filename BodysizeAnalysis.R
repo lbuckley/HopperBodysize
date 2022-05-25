@@ -36,6 +36,12 @@ bs.add= read.csv("GrasshopperSize_add_Summer2021.csv")
 #combine
 bs= rbind(bs, bs.add[,1:15])
 
+#add collected 2021 grasshoppers 
+#40.06193, -105.37569 2279m elevation, 5.9 miles west of Boulder on Sunshine Canyon Drive
+bs.meas= read.csv("GrasshopperFemurLength_SunshineCanyon_2021_format.csv")
+#combine
+bs= rbind(bs, bs.meas)
+
 #CHECK DATA
 #Fix species names
 sort(unique(bs$Species))
@@ -55,8 +61,7 @@ sun.dat1= sun.dat[inds]
 bs= rbind(bs, sun.dat1)
 
 #Write out data
-write.csv(bs, "BodySize_all_Aug2021.csv")
-
+write.csv(bs, "BodySize_all_Apr2022.csv")
 #----------
 
 #add time period
@@ -222,18 +227,6 @@ curr= subset(bs.sub2, bs.sub2$time==c("current") )
 
 ks.test(hist$Mean_Femur,curr$Mean_Femur)
 
-#----------------------
-#Make elevation ordered factor
-spec.k=6
-  
-bs.sub1= bs.sub[which(bs.sub$Species==specs[spec.k]),]
-#bs.sub1$elev= factor(bs.sub1$elev, ordered = TRUE, levels=sort(unique(bs.sub1$elev)) )
-bs.sub1$Sex= factor(bs.sub1$Sex, ordered = FALSE)
-
-mod1= lm(Mean_Femur~time*elev*Sex, data=bs.sub1)
-Anova(mod1, type="III")
-summary(mod1)  
-
 #---------------------
 # #species summary
 # "E. simplex"      
@@ -265,7 +258,79 @@ summary(mod1)
 # M. boulderensis: female bigger low, smaller high; males smaller low
 # M. sanguipes: no change
 
+#=======================================
+#relate to phenology
+
+setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
+dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
+
+#find unique spsiteyr
+dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","spsiteyear","doy_adult","gdd_adult")]
+
+#match to body size data
+gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
+bs.sub$gp= gp[match(bs.sub$Species, specs)]
+bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
+#drop sites without phenology data
+#bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
+
+#subset
+dat= subset(dat, dat$species %in% gp)
+
+#match phenology to body size
+match1= match(bs.sub$spsiteyear, dat$spsiteyear)
+#check
+unmatched= unique(bs.sub$spsiteyear[is.na(match1)])
+
+unique(dat.all[which(dat.all$species=="Eritettix simplex"),"spsiteyear"])
+
+#estimate of doy_adult, gdd_adult
+bs1= merge(bs.sub, dat,
+      by.x = "spsiteyear", by.y = "spsiteyear", all.x="TRUE")
+names(bs1)[which(names(bs1)=="doy_adult.y")]= "doy_adult"
+
+#plot relationship
+plot.doy= ggplot(data=bs1, aes(x=doy_adult, y=Mean_Femur, shape=species, color=Year))+ 
+  geom_point()+geom_smooth(method="lm")+theme_bw()+
+facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
+#, group_by=spsiteyear
+
+plot.gdd=ggplot(data=bs1, aes(x=gdd_adult, y=Mean_Femur, shape=species, color=Year))+ 
+  geom_point()+geom_smooth(method="lm")+theme_bw()+
+  facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
+
+#plot together
+plot.doy+plot.gdd
+
+#------
+#stats
+mod1= lm(Mean_Femur~doy_adult*species*site, data=bs1)
+
+#-----
+#plot as change body size, change phenology?
+agg= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$time, bs1$elev), FUN="mean", na.rm = TRUE)
+names(agg)[1:4]=c("Species", "Sites", "time", "elev")
+
+#compare historic and current
+dm <- melt(agg, measure.vars = c("Mean_Femur","doy_adult","gdd_adult"))
+agg.w= dcast(dm, Species + Sites + elev ~ variable+time, mean, value.var = "value")
+
+#differences
+agg.w$d.size= agg.w$Mean_Femur_current - agg.w$Mean_Femur_historic
+agg.w$d.doy= agg.w$doy_adult_current - agg.w$doy_adult_historic
+agg.w$d.gdd= agg.w$gdd_adult_current - agg.w$gdd_adult_historic
+
+#plot
+ggplot(data=agg.w, aes(x=d.doy, y=d.size))+geom_point(aes(shape=Species,color=Sites))+ 
+  geom_vline(xintercept = 0)+geom_hline(yintercept = 0) #+geom_smooth(method="lm")
+
+ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(shape=Sites, color=Species))+ 
+  geom_vline(xintercept = 0)+geom_hline(yintercept = 0)
+
+#----
+#checks
+table(bs[bs$Sites %in% c("Summit lake","Mt. Evans"),c("time","elev","Species")]) 
+
+#museum checks
 
 
-
- 

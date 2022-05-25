@@ -50,6 +50,7 @@ ggplot(data=bs, aes(x=Mean_Femur, y = Mass, color=Sites, shape=Sex)) +
 #====================================
 #Inventory of historic specimens
 
+#Inventory 2021
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
 mus= read.csv("AlexanderSpecimens2021.csv")
 
@@ -160,12 +161,67 @@ loc=c("us_co_baldy.mtn.10800-11000","us_co_buchanan.E1080","us_co_buchanan.E1130
 mc= mus1[which(mus1$LocalityCode %in% c(loc) ),]
 table(mc[,c("SpeciesName","LocalityCode","period")])
 
+#====================
+#Inventory 2022
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+mus= read.csv("BodySize_all_Apr2022.csv")
 
+#species
+specs=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
+mus1= mus[which(mus$Species %in% specs),]
 
+#historic, current
+mus1$period<- "initial"
+mus1$period[mus1$Year>1990]= "resurvey"
 
+#summary
+table(mus1[,c("period","elev","Species")]) 
+table(mus1[,c("Species","period","Sites")])
 
+table(mus1[,c("Sites","elev","Species")])
 
+#subset to locations with >50 specimens
+tab.sub= tab1[,,1]
+tab.rs= rowSums(tab.sub)
+tab.sub= tab.sub[which(tab.rs>50),]
 
+#Add modern specimens?
+#A. clavatus
+#Baldy mountain: 60 initial
+#Buchanan Pass: 30 initial
+#Chicken  Ranch Gulch: 30 initial
+#Mt. Evans: 192 initial, 21 resurvey
+#Sunshine: 45 initial
+
+#E. simplex
+#Sunshine: 10 initial
+
+#M. boulderensis
+#Chicken Ranch Gulch: 30
+
+#M. sanguinipes (low priority?)
+#D1: 18 initial
+
+#X. corallipes
+#Baldy mountain: 31 initial
+#Chicken Ranch Gulch: 50 initial
+#Sunshine Canyon: 49 initial
+
+#COLLECTING
+#Sunshine (2317m): A. clavatus, E. simplex, X. corallipes
+#Baldy (3322m): A. clavatus, X. corallipes
+#Chicken Ranch Gulch (no longer viable?, 2042m): A. clavatus, M. boulderensis, X. corallipes
+#Mount Evans (3505, 3688, 3883, 3993 initial only, 33901 31 initial, 75 recent): A. clavatus
+#Buchanan Pass (tough to get to?): A. clavatus
+
+#Baldy Mountain	Boulder County	39.988	-105.61	3290
+#Up road 128 from Nederland
+
+#MUSEUM CHECK
+# Baldy Mountain: boulderensis
+# Mt. evans: boulderensis other than summit lake, sanguinipes
+# Pikes peak: clavatus, boulderensis (Ask Julian to collect modern?)
+# Sunshine: boulderensis, sanguinipes
 
 
 
