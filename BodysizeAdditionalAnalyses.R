@@ -226,5 +226,3 @@ tab.sub= tab.sub[which(tab.rs>50),]
 
 
 
-
-

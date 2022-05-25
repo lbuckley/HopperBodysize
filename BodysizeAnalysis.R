@@ -281,4 +281,11 @@ ggplot(data=agg.w, aes(x=d.doy, y=d.size))+geom_point(aes(shape=Species,color=Si
 ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(shape=Sites, color=Species))+ 
   geom_vline(xintercept = 0)+geom_hline(yintercept = 0)
 
+#----
+#checks
+table(bs[bs$Sites %in% c("Summit lake","Mt. Evans"),c("time","elev","Species")]) 
+
+#museum checks
+
+
 
