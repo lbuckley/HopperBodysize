@@ -207,6 +207,64 @@ bs$per_mus= paste(bs$time, bs$Museum, sep="_")
 bs.tab=table(bs[,c("Species","per_mus","Sites")])
 bs.tab.melt= melt(bs.tab)
 
-#merge museum and body size
 #fix species names and per_meas
+specs.gs= c("A. conspersa", "E. simplex","X. corallipes","A. clavatus","M. dodgei","C. pellucida","M. sanguinipes")
+mus.tab.melt$Species= specs.gs[match(mus.tab.melt$SpeciesName, specs)]
+
+#species sites
+bs.tab.melt$SpSi= paste(bs.tab.melt$Species, bs.tab.melt$Sites, sep="_")
+mus.tab.melt$SpSi= paste(mus.tab.melt$Species, mus.tab.melt$Sites, sep="_")
+
+#cast
+bs.tab= dcast(bs.tab.melt, Species+Sites+SpSi~per_mus)
+mus.tab= dcast(mus.tab.melt, Species+Sites+SpSi+SpeciesName~per_meas)
+
+#merge museum and body size
+bs.all= merge(bs.tab, mus.tab, by="SpSi")
+
+#save
+write.csv(bs.all, "MusBsCounts.csv")
+
+##To measure
+#Mt. Evans, A. clavatus, resurvey_FALSE 17
+#Summit lake, A. clavatus, initial_FALSE 155
+
+#A1, A. conspersa, initial_FALSE	resurvey_FALSE
+#B1, A. conspersa, initial_FALSE	resurvey_FALSE
+#C1, A. conspersa, initial_FALSE	resurvey_FALSE
+#Chicken Ranch Gulch, A. conspersa, initial_FALSE	resurvey_FALSE
+#Sunshine Canyon, A. conspersa, initial_FALSE	resurvey_FALSE
+
+#Chicken Ranch Gulch, E. simplex, initial_FALSE	resurvey_FALSE
+
+#A1, M. sanguinipes, initial_FALSE
+#B1, M. sanguinipes, initial_FALSE	
+#C1, M. sanguinipes, initial_FALSE
+#Chautauqua Mesa, M. sanguinipes, initial_FALSE	resurvey_FALSE
+#Chicken Ranch Gulch, M. sanguinipes, initial_FALSE	resurvey_FALSE
+#Niwot Ridge (D1), M. sanguinipes, initial_FALSE	resurvey_FALSE
+#Sunshine Canyon, M. sanguinipes, get modern specimens and measure initial?
+
+#-------------
+#Assemble list of specimens to measure
+mus.meas= rbind(
+#A. clavatus
+mus1[which(mus1$SpeciesName=="clavatus" & mus1$Sites=="Mt. Evans" & mus1$per_meas=="resurvey_FALSE"),],
+mus1[which(mus1$SpeciesName=="clavatus" & mus1$Sites=="Summit lake" & mus1$per_meas=="initial_FALSE"),],
+
+#A. conspersa
+mus1[which(mus1$SpeciesName=="conspersa" & mus1$Sites %in% c("A1","B1","C1","Chicken Ranch Gulch","Sunshine Canyon") & mus1$per_meas=="initial_FALSE"),],
+
+#E. simplex
+mus1[which(mus1$SpeciesName=="simplex" & mus1$Sites %in% c("A1","B1","C1","Chicken Ranch Gulch","Sunshine Canyon") & mus1$per_meas=="initial_FALSE"),],
+
+#M. sanguinipes
+mus1[which(mus1$SpeciesName=="sanguinipes" & mus1$Sites %in% c("A1","B1","C1") & mus1$per_meas=="initial_FALSE"),],
+mus1[which(mus1$SpeciesName=="sanguinipes" & mus1$Sites %in% c("Chautauqua Mesa","Chicken Ranch Gulch","Niwot Ridge (D1)") & mus1$per_meas %in% c("initial_FALSE", "resurvey_FALSE")),]
+) #end rbind
+
+#write out
+write.csv(mus.meas, "MuseumMeasure2022.csv")
+
+
 

@@ -60,6 +60,19 @@ sun.dat1= sun.dat[inds]
 
 bs= rbind(bs, sun.dat1)
 
+#----------
+#Summer 2022 additions 
+
+#M. dodgei study
+bs.add= read.csv("Alexander_Mdodgei_transcribed.csv")
+#combine
+bs= rbind(bs, bs.add)
+
+#Sunshine collections
+bs.add= read.csv("BodySize_SunshineCollection_20May2022.csv")
+#combine
+bs= rbind(bs, bs.add)
+
 #Write out data
 write.csv(bs, "BodySize_all_Apr2022.csv")
 #----------
