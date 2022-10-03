@@ -73,8 +73,44 @@ bs.add= read.csv("BodySize_SunshineCollection_20May2022.csv")
 #combine
 bs= rbind(bs, bs.add)
 
+#Chicken Ranch Gulch Collections
+#check elevation
+bs.add= read.csv("EsimplexFemurLength_ChickenRanchGulch_2022.csv")
+#combine
+bs= rbind(bs, bs.add)
+
+#----
+#Museum specimens
+bs.add= read.csv("MuseumMeasure2022.csv")
+#restrict to measured
+bs.add= bs.add[which(bs.add$now_meas==1),]
+bs.add$Project_info= "MuseumMeasure2022"
+bs.add$Specimen_No= NA
+bs.add$Elevation_low= bs.add$elev
+bs.add$Elevation_upper= NA
+
+#sep Stage.Sex
+bs.add$Sex="M"
+bs.add$Sex[grep("female", bs.add$Stage.Sex)]="F"
+
+bs.add1= bs.add[,c("SpeciesName","Sites","year", "Project_info","Sex","Specimen_No","Barcode","R_femur1","R_femur2","L_femur1","L_femur2") ]
+bs.add1$Mean_Femur= rowMeans(bs.add1[,c("L_femur1","L_femur2","R_femur1","R_femur2")], na.rm=T)
+bs.add1$Mass=NA
+bs.add1= cbind(bs.add1, bs.add$Elevation_low, bs.add$Elevation_upper)
+#update species names
+bs.add1$SpeciesName= gsub("clavatus", "A. clavatus", bs.add1$SpeciesName)
+bs.add1$SpeciesName= gsub("conspersa", "A. conspersa", bs.add1$SpeciesName)
+bs.add1$SpeciesName= gsub("simplex", "E. simplex", bs.add1$SpeciesName)
+bs.add1$SpeciesName= gsub("sanguinipes", "M. sanguinipes", bs.add1$SpeciesName)
+
+#update names
+colnames(bs.add1)= c("Species","Sites","Year","Project_info","Sex","Specimen_No","Barcode","R_Femur1","R_Femur2","L_Femur1","L_Femur2","Mean_Femur","Mass","Elevation_low","Elevation_upper")
+
+#combine
+bs= rbind(bs, bs.add1)
+
 #Write out data
-write.csv(bs, "BodySize_all_Apr2022.csv")
+write.csv(bs, "BodySize_all_Oct2022.csv")
 #----------
 
 #add time period
@@ -120,22 +156,28 @@ bs$elev[inds]=elevs[inds]
 bs$Sex= factor(bs$Sex, order=TRUE, levels=c("F","M"))
 
 #species by seasonal timing
-#add A. conspersa?
-specs= c("A. conspersa", "E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
+#add A. conspersa? "A. conspersa", 
+specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
 #specs= c("A. clavatus","C. pellucida","E. simplex","M. boulderensis","M. sanguinipes","X. corallipes") 
 
 bs.sub= subset(bs, bs$Species %in% specs)
-bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("A. conspersa", "E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
 #subset elevations
 elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3901)
 bs.sub= subset(bs.sub, bs.sub$elev %in% elevs.keep)
 
 ##drop data without historic , current match
-#bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042) ),]
-#bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042) ),]
-#bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(3048,3566) ),]
-#bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,3414) ),]
+# A. clavatus sunshine, chicken ranch gulch
+bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042,2317) ),]
+# X. corallipes chat, sunshine, cheicken ranch gulch
+bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042,2317) ),]
+# M. sanguinipes C1, D1, sunshine
+bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(2317,3048,3566) ),]
+#M. boulderensis Rollin's Pass, sunshine canyon, chicken ranch gulch
+bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,2317,3414) ),]
+#C. pellucida sunshine
+bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,3048,3566) ),]
 
 #explore data
 #full table
@@ -147,15 +189,15 @@ with(bs.sub, table(Species, time, Sites))
 tab1= cbind(tab[,1,,1],tab[,1,,2],tab[,2,,1],tab[,2,,2],tab[,3,,1],tab[,3,,2],tab[,4,,1],tab[,4,,2],tab[,5,,1],tab[,5,,2],tab[,6,,1],tab[,6,,2],tab[,7,,1],tab[,7,,2])
 #write out
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
-write.csv(tab1,"Counts.csv")
+write.csv(tab1,"Counts_Sep2022.csv")
 
 #Write out data
-write.csv(bs.sub, "BodySize_sub_Apr2022.csv")
+write.csv(bs.sub, "BodySize_sub_Sept2022.csv")
 
 #------
 #scatter plot
 #by elevation
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("Size_by_ElevTime.pdf",height = 12, width = 12)
 ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) + 
     facet_wrap(Species~., scales="free")+geom_point(size=2)+
@@ -169,7 +211,6 @@ mu <- ddply(bs.sub, c("Sex","Species","elev","time"), summarise, femur.groupmean
 
 #FIGURE 1- density plots
 #density plots
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 pdf("DenPlots.pdf",height = 12, width = 12)
 ggplot(data=bs.sub, aes(x=Mean_Femur, color=time,lty=Sex))+ 
   facet_grid(Species~elev, scales="free")+geom_density(aes(fill=time, alpha=0.3))+theme_bw()+
@@ -183,7 +224,7 @@ bs.sub1= na.omit(bs.sub1)
 
 mod1= lm(Mean_Femur~time*elev*Sex*Species, data=bs.sub1, na.action = "na.fail")
 plot_model(mod1, type="pred",terms=c("elev","time","Species","Sex"), show.data=TRUE)
-Anova(mod1, type=3)
+Anova(mod1, type=3) #, singular.ok = T)
 # dredge(mod1) #full model most support
 
 #-------
@@ -217,7 +258,7 @@ for(spec.k in 1:length(specs)){
 } #end loop specs 
 
 #save figure
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots.pdf",height = 12, width = 12)
 (modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
 dev.off()
