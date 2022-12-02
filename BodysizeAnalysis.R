@@ -237,6 +237,7 @@ stats= array(data=NA, dim=c(length(specs),9,4),
              dimnames=list(specs,vars,stat) ) 
 
 #FIGURE 2- model output
+bs.sub$time= factor(bs.sub$time, levels=c("current","historic"), ordered=T)
 
 modplots <- vector('list', length(specs))
 
@@ -330,7 +331,7 @@ gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melan
 bs.sub$gp= gp[match(bs.sub$Species, specs)]
 bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
 #drop sites without phenology data
-#bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
+bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
 
 #subset
 dat= subset(dat, dat$species %in% gp)
