@@ -206,15 +206,52 @@ ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) 
   scale_shape_manual(values = c(16, 21))
 dev.off()
 
-#violin and boxplot
+#old versions
 bs.sub$group= paste(bs.sub$Species, bs.sub$elev, bs.sub$Sex, bs.sub$time, sep="")
 
+dodge <- position_dodge(width = 20)
+
+#split violin
 vplot= ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time)) +
   theme_bw()+ geom_smooth(method="lm", se=FALSE)+
-  geom_violin(aes(group=group), alpha=0.6) +
-  geom_point()+
+  geom_split_violin(aes(group=group), alpha=0.6, position = dodge) +
+  #geom_point()+
   facet_grid(Species~Sex, scales="free")+
   scale_fill_viridis(discrete = TRUE)
+
+#boxplot
+boxplot=ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time)) +
+  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  geom_boxplot(aes(group=group), alpha=0.6, width=200, position="dodge") +
+  geom_point(position="dodge")+
+  facet_grid(Species~Sex, scales="free")+
+  scale_fill_viridis(discrete = TRUE)
+
+#half violin
+vplot=ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time, group=group)) +
+  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  geom_violinhalf(aes(group=group), alpha=0.6, width=500, position="dodge") +
+  geom_point(position="dodge")+
+  facet_wrap(~Species, scales="free")+
+  scale_fill_viridis(discrete = TRUE)
+
+#CURRENT VIOLIN
+bs.sub$SexTime= paste(bs.sub$Sex, bs.sub$time, sep="")
+dodge <- position_dodge(width = 100)
+jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
+
+vplot= ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
+  facet_wrap(Species~., scales="free")+
+  geom_point(position=jdodge, aes(shape=Sex))+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
+  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
+  #scale_shape_manual(values = c(16, 21))+
+  geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
+  theme_modern()+
+  scale_fill_manual(values= c("darkorange","cadetblue"))+
+  scale_color_manual(values= c("darkorange","cadetblue"))+
+  xlab("Elevation (m)")+
+  ylab("Femur length (mm)")
 
 pdf("Size_by_ElevTime_violin.pdf",height = 12, width = 12)
 vplot
