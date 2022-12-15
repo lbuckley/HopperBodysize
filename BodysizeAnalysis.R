@@ -177,7 +177,7 @@ bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(2317,
 #M. boulderensis Rollin's Pass, sunshine canyon, chicken ranch gulch
 bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,2317,3414) ),]
 #C. pellucida sunshine
-bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,3048,3566) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,3566) ),] #3048
 
 #explore data
 #full table
@@ -205,7 +205,21 @@ ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) 
   theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
   scale_shape_manual(values = c(16, 21))
 dev.off()
-  
+
+#violin and boxplot
+bs.sub$group= paste(bs.sub$Species, bs.sub$elev, bs.sub$Sex, bs.sub$time, sep="")
+
+vplot= ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time)) +
+  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  geom_violin(aes(group=group), alpha=0.6) +
+  geom_point()+
+  facet_grid(Species~Sex, scales="free")+
+  scale_fill_viridis(discrete = TRUE)
+
+pdf("Size_by_ElevTime_violin.pdf",height = 12, width = 12)
+vplot
+dev.off()
+
 #find means
 mu <- ddply(bs.sub, c("Sex","Species","elev","time"), summarise, femur.groupmean=mean(Mean_Femur))
 
