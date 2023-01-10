@@ -28,27 +28,25 @@ unique(dat.all[which(dat.all$species=="Melanoplus sanguinipes"),"spsiteyear"])
 
 #FIX 2012.5
 
+#--------
 #estimate of doy_adult, gdd_adult
 bs1= merge(bs.sub, dat,
-      by.x = "spsiteyear", by.y = "spsiteyear", all.x="TRUE")
+           by.x = "spsiteyear", by.y = "spsiteyear", all.x="TRUE")
 names(bs1)[which(names(bs1)=="doy_adult.y")]= "doy_adult"
 
+#plot body size means per year
+
+agg.size.yr= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$Year, bs1$elev), FUN="mean", na.rm = TRUE)
+names(agg.size.yr)[1:4]=c("Species", "Sites", "year", "elev")
+
 #plot relationship
-plot.doy= ggplot(data=bs1, aes(x=doy_adult, y=Mean_Femur, shape=species, color=Year))+ 
-  geom_point()+geom_smooth(method="lm")+theme_bw()+
-facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
-#, group_by=spsiteyear
+plot.doy= ggplot(data=agg.size.yr, aes(x=doy_adult, y=Mean_Femur, shape=Species, color=year))+ 
+  geom_point()+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+theme(legend.position = "bottom")
 
-plot.gdd=ggplot(data=bs1, aes(x=gdd_adult, y=Mean_Femur, shape=species, color=Year))+ 
-  geom_point()+geom_smooth(method="lm")+theme_bw()+
-  facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
-
-#plot together
-plot.doy+plot.gdd
-
-#------
-#stats
-mod1= lm(Mean_Femur~doy_adult*species*site, data=bs1)
+plot.gdd= ggplot(data=agg.size.yr, aes(x=gdd_adult, y=Mean_Femur, shape=Species, color=year))+ 
+  geom_point()+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  theme(legend.position = "bottom")
 
 #-----
 #plot as change body size, change phenology?

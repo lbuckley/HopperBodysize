@@ -7,6 +7,9 @@ library(reshape2)
 library(plyr)
 library(viridis)
 library(car)
+library(nlme)
+library(lme4)
+library(lmerTest)
 #library(MuMIn)
 
 #load data
@@ -167,10 +170,16 @@ bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. cor
 elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3901)
 bs.sub= subset(bs.sub, bs.sub$elev %in% elevs.keep)
 
+# Drop few samples of X. corallipes chat
+bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768) ),]
+
+#store data from focal elevations even if no match
+bs.unmatched= bs.sub
+
 ##drop data without historic , current match
 # A. clavatus sunshine, chicken ranch gulch
 bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042,2317) ),]
-# X. corallipes chat, sunshine, cheicken ranch gulch
+# X. corallipes chat, sunshine, chicken ranch gulch
 bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042,2317) ),]
 # M. sanguinipes C1, D1, sunshine
 bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(2317,3048,3566) ),]
@@ -206,37 +215,9 @@ ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) 
   scale_shape_manual(values = c(16, 21))
 dev.off()
 
-#old versions
-bs.sub$group= paste(bs.sub$Species, bs.sub$elev, bs.sub$Sex, bs.sub$time, sep="")
-
-dodge <- position_dodge(width = 20)
-
-#split violin
-vplot= ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time)) +
-  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
-  geom_split_violin(aes(group=group), alpha=0.6, position = dodge) +
-  #geom_point()+
-  facet_grid(Species~Sex, scales="free")+
-  scale_fill_viridis(discrete = TRUE)
-
-#boxplot
-boxplot=ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time)) +
-  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
-  geom_boxplot(aes(group=group), alpha=0.6, width=200, position="dodge") +
-  geom_point(position="dodge")+
-  facet_grid(Species~Sex, scales="free")+
-  scale_fill_viridis(discrete = TRUE)
-
-#half violin
-vplot=ggplot(data=bs.sub, aes(x=elev, y=Mean_Femur, fill=time, color=time, group=group)) +
-  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
-  geom_violinhalf(aes(group=group), alpha=0.6, width=500, position="dodge") +
-  geom_point(position="dodge")+
-  facet_wrap(~Species, scales="free")+
-  scale_fill_viridis(discrete = TRUE)
-
-#CURRENT VIOLIN
+#Violin plot
 bs.sub$SexTime= paste(bs.sub$Sex, bs.sub$time, sep="")
+bs.sub$group= paste(bs.sub$Species, bs.sub$elev, bs.sub$Sex, bs.sub$time, sep="")
 dodge <- position_dodge(width = 100)
 jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
 
@@ -257,20 +238,40 @@ pdf("Size_by_ElevTime_violin.pdf",height = 12, width = 12)
 vplot
 dev.off()
 
-#find means
-mu <- ddply(bs.sub, c("Sex","Species","elev","time"), summarise, femur.groupmean=mean(Mean_Femur))
-
-#FIGURE 1- density plots
-#density plots
-pdf("DenPlots.pdf",height = 12, width = 12)
-ggplot(data=bs.sub, aes(x=Mean_Femur, color=time,lty=Sex))+ 
-  facet_grid(Species~elev, scales="free")+geom_density(aes(fill=time, alpha=0.3))+theme_bw()+
-  geom_vline(data=mu, aes(xintercept=femur.groupmean, color=time,lty=Sex), size=0.3)
-  #+scale_fill_manual(values=c("orange","blue"))
+#All sites
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("Size_by_ElevTime_Unmatched.pdf",height = 12, width = 12)
+ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) + 
+  facet_wrap(Species~., scales="free")+geom_point(size=2)+
+  theme_bw()+ geom_smooth(method="lm", aes(lty=Sex) )+
+  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
+  scale_shape_manual(values = c(16, 21))
 dev.off()
 
+#Violin plot
+bs.unmatched$SexTime= paste(bs.unmatched$Sex, bs.unmatched$time, sep="")
+bs.unmatched$group= paste(bs.unmatched$Species, bs.unmatched$elev, bs.unmatched$Sex, bs.unmatched$time, sep="")
+
+vplot= ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
+  facet_wrap(Species~., scales="free")+
+  geom_point(position=jdodge, aes(shape=Sex))+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
+  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
+  #scale_shape_manual(values = c(16, 21))+
+  geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
+  theme_modern()+
+  scale_fill_manual(values= c("darkorange","cadetblue"))+
+  scale_color_manual(values= c("darkorange","cadetblue"))+
+  xlab("Elevation (m)")+
+  ylab("Femur length (mm)")
+
+pdf("Size_by_ElevTime_violin_Unmatched.pdf",height = 12, width = 12)
+vplot
+dev.off()
+
+#-------
 #combined model
-bs.sub1= bs.sub[,c("Mean_Femur","time","elev","Sex","Species")]
+bs.sub1= bs.sub[,c("Mean_Femur","time","elev","Sex","Species","Sites")]
 bs.sub1= na.omit(bs.sub1)
 
 mod1= lm(Mean_Femur~time*elev*Sex*Species, data=bs.sub1, na.action = "na.fail")
@@ -278,13 +279,21 @@ plot_model(mod1, type="pred",terms=c("elev","time","Species","Sex"), show.data=T
 Anova(mod1, type=3) #, singular.ok = T)
 # dredge(mod1) #full model most support
 
+mod.lmer <- lmer(Mean_Femur~time*elev*Sex*Species +
+                    (1|Sites),
+                  REML = FALSE,
+                  na.action = 'na.omit', data = bs.sub1)
+anova(mod.lmer)
+summary(mod.lmer)$coefficients
+coef(mod.lmer)
+
 #-------
 #By species
 #ANOVA output
-stat= c("sumsq","df","F","p")
+stat= c("sumsq","df","F","p","sumsq","df","F","p")
 vars= c("Intercept","time","elev","sex","time:elev","time:sex","elev:sex","time:elev:sex","residuals")
 
-stats= array(data=NA, dim=c(length(specs),9,4),
+stats= array(data=NA, dim=c(length(specs),9,8),
              dimnames=list(specs,vars,stat) ) 
 
 #FIGURE 2- model output
@@ -295,8 +304,13 @@ modplots <- vector('list', length(specs))
 for(spec.k in 1:length(specs)){
 
   mod1= lm(Mean_Femur~time*elev*Sex, data=bs.sub[which(bs.sub$Species==specs[spec.k]),])
-  stats[spec.k,,]=as.matrix(Anova(mod1, type="III"))
-    
+  stats[spec.k,,1:4]=as.matrix(Anova(mod1, type="III"))
+  
+  mod.lmer <- lmer(Mean_Femur~time*elev*Sex + (1|Sites),
+                   REML = FALSE,
+                   na.action = 'na.omit', data = bs.sub[which(bs.sub$Species==specs[spec.k]),])
+  stats[spec.k,2:8,5:8]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
+  
     #plot output
    message(spec.k)
    modplots[[spec.k]] <- local({
@@ -321,7 +335,13 @@ stats[,,4]= signif(stats[,,4],3)
 #stats.all=rbind(stats[1,,],stats[2,,],stats[3,,],stats[4,,],stats[5,,],stats[6,,])
 #write.csv(stats[,,4],"Table1.csv")
 
-stats[,,c(1,4)]
+stats[,,c(4,8)]
+
+lm.sig= stats[,,c(4)]
+lmer.sig= stats[,,c(8)]
+lm.sig[lm.sig < 0.05] <- "*"
+lmer.sig[lmer.sig < 0.05] <- "*"
+
 
 #save coefficients
 #mo.p=summary(mod1)$coefficients
@@ -369,78 +389,3 @@ ks.test(hist$Mean_Femur,curr$Mean_Femur)
 # M. sanguipes: no change
 
 #=======================================
-#relate to phenology
-
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
-dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
-
-#find unique spsiteyr
-dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","spsiteyear","doy_adult","gdd_adult")]
-
-#match to body size data
-gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
-bs.sub$gp= gp[match(bs.sub$Species, specs)]
-bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
-#drop sites without phenology data
-bs.sub=subset(bs.sub, bs.sub$Sites %in% c("A1","B1","C1") )
-
-#subset
-dat= subset(dat, dat$species %in% gp)
-
-#match phenology to body size
-match1= match(bs.sub$spsiteyear, dat$spsiteyear)
-#check
-unmatched= unique(bs.sub$spsiteyear[is.na(match1)])
-
-unique(dat.all[which(dat.all$species=="Eritettix simplex"),"spsiteyear"])
-
-#estimate of doy_adult, gdd_adult
-bs1= merge(bs.sub, dat,
-      by.x = "spsiteyear", by.y = "spsiteyear", all.x="TRUE")
-names(bs1)[which(names(bs1)=="doy_adult.y")]= "doy_adult"
-
-#plot relationship
-plot.doy= ggplot(data=bs1, aes(x=doy_adult, y=Mean_Femur, shape=species, color=Year))+ 
-  geom_point()+geom_smooth(method="lm")+theme_bw()+
-facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
-#, group_by=spsiteyear
-
-plot.gdd=ggplot(data=bs1, aes(x=gdd_adult, y=Mean_Femur, shape=species, color=Year))+ 
-  geom_point()+geom_smooth(method="lm")+theme_bw()+
-  facet_grid(Species~Sites, scales="free")+ theme(legend.position = "bottom")
-
-#plot together
-plot.doy+plot.gdd
-
-#------
-#stats
-mod1= lm(Mean_Femur~doy_adult*species*site, data=bs1)
-
-#-----
-#plot as change body size, change phenology?
-agg= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$time, bs1$elev), FUN="mean", na.rm = TRUE)
-names(agg)[1:4]=c("Species", "Sites", "time", "elev")
-
-#compare historic and current
-dm <- melt(agg, measure.vars = c("Mean_Femur","doy_adult","gdd_adult"))
-agg.w= dcast(dm, Species + Sites + elev ~ variable+time, mean, value.var = "value")
-
-#differences
-agg.w$d.size= agg.w$Mean_Femur_current - agg.w$Mean_Femur_historic
-agg.w$d.doy= agg.w$doy_adult_current - agg.w$doy_adult_historic
-agg.w$d.gdd= agg.w$gdd_adult_current - agg.w$gdd_adult_historic
-
-#plot
-ggplot(data=agg.w, aes(x=d.doy, y=d.size))+geom_point(aes(shape=Species,color=Sites))+ 
-  geom_vline(xintercept = 0)+geom_hline(yintercept = 0) #+geom_smooth(method="lm")
-
-ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(shape=Sites, color=Species))+ 
-  geom_vline(xintercept = 0)+geom_hline(yintercept = 0)
-
-#----
-#checks
-table(bs[bs$Sites %in% c("Summit lake","Mt. Evans"),c("time","elev","Species")]) 
-
-#museum checks
-
-
