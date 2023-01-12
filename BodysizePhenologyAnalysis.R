@@ -35,21 +35,50 @@ bs1= merge(bs.sub, dat,
 names(bs1)[which(names(bs1)=="doy_adult.y")]= "doy_adult"
 
 #plot body size means per year
-
-agg.size.yr= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$Year, bs1$elev), FUN="mean", na.rm = TRUE)
-names(agg.size.yr)[1:4]=c("Species", "Sites", "year", "elev")
+agg.size.yr= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$Year, bs1$elev, bs1$time), FUN="mean", na.rm = TRUE)
+names(agg.size.yr)[1:5]=c("Species", "Sites", "year", "elev","timeperiod")
 
 #plot relationship
-plot.doy= ggplot(data=agg.size.yr, aes(x=doy_adult, y=Mean_Femur, shape=Species, color=year))+ 
-  geom_point()+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-theme(legend.position = "bottom")
+plot.doy= ggplot(data=agg.size.yr, aes(x=doy_adult, y=Mean_Femur, color=Species, shape=timeperiod, group=Species))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Sites~., scales="free")+
+theme(legend.position = "bottom")+
+  xlab("Day of year of adulthood")+ ylab("Femur length (mm)")
 
-plot.gdd= ggplot(data=agg.size.yr, aes(x=gdd_adult, y=Mean_Femur, shape=Species, color=year))+ 
-  geom_point()+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  theme(legend.position = "bottom")
+plot.gdd= ggplot(data=agg.size.yr, aes(x=gdd_adult, y=Mean_Femur, color=Species, shape=timeperiod, group=Species))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Sites~., scales="free")+
+  theme(legend.position = "bottom")+
+  xlab("GDDs at adulthood")+ ylab("Femur length (mm)")
 
 #-----
-#plot as change body size, change phenology?
+#means by time period
+agg.size= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$elev, bs1$time), FUN="mean", na.rm = TRUE)
+names(agg.size)[1:4]=c("Species", "Sites", "elev","timeperiod")
+
+#subtract means
+agg.size$SpSiTp= paste(agg.size$Species, agg.size$Sites, agg.size$time, sep="")
+agg.size.yr$SpSiTp= paste(agg.size.yr$Species, agg.size.yr$Sites, agg.size.yr$time, sep="")
+agg.size.yr$SpSi= paste(agg.size.yr$Species, agg.size.yr$Sites, sep="")
+
+match1= match(agg.size.yr$SpSiTp, agg.size$SpSiTp)
+agg.size.yr$Mean_Femur_diff= agg.size.yr$Mean_Femur - agg.size$Mean_Femur[match1]
+agg.size.yr$doy_adult_diff= agg.size.yr$doy_adult - agg.size$doy_adult[match1]
+agg.size.yr$gdd_adult_diff= agg.size.yr$gdd_adult - agg.size$gdd_adult[match1]
+
+#plot
+plot.doy.diff= ggplot(data=agg.size.yr, aes(x=doy_adult_diff, y=Mean_Femur_diff, color=Species, shape=timeperiod, group=SpSi, lty=Sites))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  theme(legend.position = "bottom")+
+  xlab("Delta Day of year of adulthood")+ ylab("Delta Femur length (mm)")
+  
+plot.gdd.diff= ggplot(data=agg.size.yr, aes(x=gdd_adult_diff, y=Mean_Femur_diff, color=Species, shape=timeperiod, group=SpSi, lty=Sites))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  theme(legend.position = "bottom")+
+  xlab("Delta GDDs at adulthood")+ ylab("Delta Femur length (mm)")
+
+#-----
+#plot as change body size, change phenology between historic and current
 agg= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$time, bs1$elev), FUN="mean", na.rm = TRUE)
 names(agg)[1:4]=c("Species", "Sites", "time", "elev")
 
@@ -74,3 +103,12 @@ ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(color=Species,shape=Si
   geom_vline(xintercept = 0)+geom_hline(yintercept = 0)+scale_shape_manual(values=c(21,22,24))
 #nyphal diapausers respond differently
 
+#-------------------
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("SizeByPhenology_bySite.pdf",height = 12, width = 12)
+plot.doy / plot.gdd
+dev.off()
+
+pdf("SizeByPhenology_Diff.pdf",height = 6, width = 12)
+plot.doy.diff + plot.gdd.diff
+dev.off()
