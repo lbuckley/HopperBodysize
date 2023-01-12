@@ -226,13 +226,24 @@ vplot= ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, group= SexTime, color=tim
   geom_point(position=jdodge, aes(shape=Sex))+
   theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
   theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
-  #scale_shape_manual(values = c(16, 21))+
   geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
   theme_modern()+
   scale_fill_manual(values= c("darkorange","cadetblue"))+
   scale_color_manual(values= c("darkorange","cadetblue"))+
+  scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
   ylab("Femur length (mm)")
+
+#add mean and se
+bs.sum= ddply(bs.sub, c("Species", "elev", "Sex","time","SexTime"), summarise,
+              N    = length(Mean_Femur),
+              mean = mean(Mean_Femur),
+              sd   = sd(Mean_Femur) )
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$mean)
+
+vplot= vplot + 
+  geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
 
 pdf("Size_by_ElevTime_violin.pdf",height = 12, width = 12)
 vplot
