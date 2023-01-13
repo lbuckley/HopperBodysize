@@ -166,6 +166,9 @@ specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pelluc
 bs.sub= subset(bs, bs$Species %in% specs)
 bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
+#drop very small pellucida
+bs.sub= bs.sub[-which(bs.sub$Mean_Femur<5.1),]
+
 #subset elevations
 elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3901)
 bs.sub= subset(bs.sub, bs.sub$elev %in% elevs.keep)
@@ -274,8 +277,20 @@ vplot= ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, group= SexTime, col
   theme_modern()+
   scale_fill_manual(values= c("darkorange","cadetblue"))+
   scale_color_manual(values= c("darkorange","cadetblue"))+
+  scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
   ylab("Femur length (mm)")
+
+#add mean and se
+bs.sum= ddply(bs.unmatched, c("Species", "elev", "Sex","time","SexTime"), summarise,
+              N    = length(Mean_Femur),
+              mean = mean(Mean_Femur),
+              sd   = sd(Mean_Femur) )
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$mean)
+
+vplot= vplot + 
+  geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
 
 pdf("Size_by_ElevTime_violin_Unmatched.pdf",height = 12, width = 12)
 vplot

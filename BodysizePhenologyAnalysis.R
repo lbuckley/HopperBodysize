@@ -115,7 +115,7 @@ pdf("SizeByPhenology_Diff.pdf",height = 6, width = 12)
 plot.doy.diff + plot.gdd.diff
 dev.off()
 
-#------------------
+#----------------------------
 #Use date to assess temp, size relationship for all specimens
 bs.all$Year= as.numeric(as.character(bs.all$Year))
 bs.all$Year[which(bs.all$Year==1048)]<- 1948
@@ -131,12 +131,38 @@ fdir= "/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/"
 #load climate data
 setwd( paste(fdir, "climate", sep="") )   
 clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
+sort(unique(clim$Year))
+# add years: 1931, 1941, 1947, 1948, 1949, 1950, 2022
+clim.all= read.csv("AlexanderClimateAll.csv")
+sort(unique(clim.all$Year))
+inds= which(clim.all$Year %in% c(1961, 1962, 1963, 1964, 1979, 1981) )
+clim.add= clim.all[inds,]
+clim.add$sjy= paste(clim.add$Site, clim.add$Julian, clim.add$Year, sep="_")
+
+clim.bind= clim[1:nrow(clim.add),]
+clim.bind[]=NA
+clim.bind[,c("Site","Julian","Year","Max","Min","Mean","sjy")]= clim.add[,c("Site","Julian","Year","Max","Min","Mean","sjy")]
+clim.all= rbind(clim, clim.bind)
 
 #cummulative degree days
 #cumsum within groups
-clim = clim %>% group_by(Year,Site) %>% arrange(Julian) %>% mutate(cdd_sum = cumsum(dd_sum),cdd_june = cumsum(dd_june),cdd_july = cumsum(dd_july),cdd_aug = cumsum(dd_aug),cdd_early = cumsum(dd_early),cdd_mid = cumsum(dd_mid),cdd_ac = cumsum(dd_ac),cdd_mb = cumsum(dd_mb),cdd_ms = cumsum(dd_ms) ) 
+clim.sum = clim.all %>% group_by(Year,Site) %>% arrange(Julian) %>% mutate(cdd_sum = cumsum(dd_sum),cdd_june = cumsum(dd_june),cdd_july = cumsum(dd_july),cdd_aug = cumsum(dd_aug),cdd_early = cumsum(dd_early),cdd_mid = cumsum(dd_mid),cdd_ac = cumsum(dd_ac),cdd_mb = cumsum(dd_mb),cdd_ms = cumsum(dd_ms) ) 
 
-#Save yearly data
+#rough spring (May + June) averages
+clim.ave= clim.all[which(clim.all$Julian %in% 121:181),]
+clim.ave= aggregate(clim.ave[,c("Julian","Max","Mean")], list(clim.ave$Site, clim.ave$Year), FUN="mean", na.rm=TRUE)
+names(clim.ave)[1:2]=c("Site","Year")
+#use C1
+clim.ave= clim.ave[which(clim.ave$Site=="C1"),]
+
+#add clim C1 to bs.all
+match1= match(bs.all$Year, clim.ave$Year)
+matched= which(!is.na(match1))
+
+bs.all$MeanC1[matched]= clim.ave$Mean[match1[matched]] 
+
+#------------------------
+#load yearly data
 setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
 clim.yr= read.csv("AlexanderYearlyClimate.csv")
 
@@ -150,19 +176,61 @@ bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]]
 bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
 bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
 
-#plot vs year data
-#dd_early, Mean, * SpringPre, SpringSnow, * dd
-size.climyr= ggplot(data=bs.all, aes(x=SpringSnow, y=Mean_Femur, color=factor(elev), shape=timeperiod, group=Sites))+ 
-  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  facet_wrap(Species~., scales="free")+
-  theme(legend.position = "bottom")+
-  ylab("Femur length (mm)")+ #xlab("Day of year of adulthood")+ 
-  scale_color_viridis_d()
+#------------------------
+#Violin plot by climate
+dodge <- position_dodge(width = 1)
+jdodge <- position_jitterdodge(dodge.width = 1, jitter.width=1)
+bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, paste="")
+bs.all$SexElevYr= paste(bs.all$Sex, bs.all$elev, bs.all$year, paste="")
+#pick variable
+bs.all$clim.var = bs.all$MeanC1
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("SizeDoy_museum.pdf",height = 12, width = 12)
-size.climyr
+#MeanC1, Mean, dd, dd_early, SpringPre, SpringSnow
+size.clim.c1= ggplot(data=bs.all, aes(x=clim.var, y = Mean_Femur, group= SexElev, color=factor(elev), fill=factor(elev) ))+
+  facet_wrap(Species~., scales="free")+
+  geom_point(position=jdodge, aes(shape=Sex))+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
+  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
+  geom_violin(aes(group=SexElevYr),alpha=0.6, width=0.5, position=dodge, scale="width")+
+  theme_modern()+
+  scale_shape_manual(values=c(21,24,25))+
+  ylab("Femur length (mm)")
+
+#add mean and se
+bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summarise,
+                  N    = length(Mean_Femur),
+                  mean = mean(Mean_Femur),
+                  sd   = sd(Mean_Femur),
+                  MeanC1= mean(MeanC1),
+                  Mean= mean(Mean),
+                  dd= mean(dd),
+                  dd_early= mean(dd_early),
+                  SpringPre= mean(SpringPre),
+                  SpringSnow= mean(SpringSnow)  )
+bs.all.sum$se= bs.all.sum$sd / sqrt(bs.all.sum$mean)
+
+vclim= size.clim.c1 + 
+  geom_errorbar(data=bs.all.sum, position=position_dodge(width = 1), aes(x=clim.var, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  geom_point(data=bs.all.sum, position=position_dodge(width = 1), aes(x=clim.var, y = mean, shape=Sex), size=3, col="black")
+
+pdf("Size_by_Clim_violin.pdf",height = 12, width = 12)
+vclim
 dev.off()
+
+#-------
+#plot means
+
+# "MeanC1","Mean","dd","dd_early","SpringPre","SpringSnow"
+plot.c2=ggplot(data=bs.all.sum, aes(x=MeanC1, y = mean, group= SexElev, shape=Sex, color=factor(elev) ))+
+  facet_wrap(Species~., scales="free")+
+  geom_point(size=3)+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  scale_color_brewer(palette = "Spectral")
+
+pdf("SizeMean_by_Clim.pdf",height = 12, width = 12)
+plot.c2
+dev.off()  
 
 #-----------------
 #use collection dates
@@ -195,13 +263,17 @@ bs.all$timeperiod[bs.all$Year<1990]="historic"
 tmp <- as.Date(paste(bs.all$day, bs.all$month, bs.all$year, sep="/"), format = "%d/%m/%Y")
 bs.all$doy_spec= as.numeric(format(tmp, "%j"))
 
+#drop low value for C. pellucida
+bs.all= bs.all[-which(bs.all$doy_spec==55),]
+
 #plot doy vs size 
-plot.doy.size= ggplot(data=bs.all, aes(x=doy_spec, y=Mean_Femur, color=factor(elev), shape=timeperiod, group=Sites))+ 
+plot.doy.size= ggplot(data=bs.all, aes(x=doy_spec, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
   xlab("Day of year of adulthood")+ ylab("Femur length (mm)")+
   scale_color_viridis_d()
+#group by year?
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("SizeDoy_museum.pdf",height = 12, width = 12)
