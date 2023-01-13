@@ -203,6 +203,7 @@ write.csv(tab1,"Counts_Sep2022.csv")
 #Write out data
 write.csv(bs.sub, "BodySize_sub_Sept2022.csv")
 
+bs.all= bs.sub
 #------
 #scatter plot
 #by elevation

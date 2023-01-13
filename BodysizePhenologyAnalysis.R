@@ -1,3 +1,5 @@
+library(stringr)
+
 #relate to phenology
 
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
@@ -111,4 +113,97 @@ dev.off()
 
 pdf("SizeByPhenology_Diff.pdf",height = 6, width = 12)
 plot.doy.diff + plot.gdd.diff
+dev.off()
+
+#------------------
+#Use date to assess temp, size relationship for all specimens
+bs.all$Year= as.numeric(as.character(bs.all$Year))
+bs.all$Year[which(bs.all$Year==1048)]<- 1948
+bs.all$Year[which(bs.all$Year==1049)]<- 1949
+bs.all$Year[which(bs.all$Year==1058)]<- 1958
+bs.all$Year[which(bs.all$Year==1059)]<- 1959
+bs.all$Year[which(bs.all$Year==1060)]<- 1960
+
+#gdds and temps of season
+
+fdir= "/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/"
+
+#load climate data
+setwd( paste(fdir, "climate", sep="") )   
+clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
+
+#cummulative degree days
+#cumsum within groups
+clim = clim %>% group_by(Year,Site) %>% arrange(Julian) %>% mutate(cdd_sum = cumsum(dd_sum),cdd_june = cumsum(dd_june),cdd_july = cumsum(dd_july),cdd_aug = cumsum(dd_aug),cdd_early = cumsum(dd_early),cdd_mid = cumsum(dd_mid),cdd_ac = cumsum(dd_ac),cdd_mb = cumsum(dd_mb),cdd_ms = cumsum(dd_ms) ) 
+
+#Save yearly data
+setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
+clim.yr= read.csv("AlexanderYearlyClimate.csv")
+
+#match climate data
+match1= match(bs.all$year, clim.yr$year)
+matched= which(!is.na(match1))
+
+bs.all$Mean[matched]= clim.yr$Mean[match1[matched]] 
+bs.all$dd[matched]= clim.yr$dd[match1[matched]] 
+bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]] 
+bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
+bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
+
+#plot vs year data
+#dd_early, Mean, * SpringPre, SpringSnow, * dd
+size.climyr= ggplot(data=bs.all, aes(x=SpringSnow, y=Mean_Femur, color=factor(elev), shape=timeperiod, group=Sites))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., scales="free")+
+  theme(legend.position = "bottom")+
+  ylab("Femur length (mm)")+ #xlab("Day of year of adulthood")+ 
+  scale_color_viridis_d()
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("SizeDoy_museum.pdf",height = 12, width = 12)
+size.climyr
+dev.off()
+
+#-----------------
+#use collection dates
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
+mus1= read.csv("AlexanderSpecimens2021.csv")
+
+#match bs to museum code
+mus1$Barcode= mus1$SpecimenCode
+mus1$Barcode= as.numeric(sub("UCMC ", "", mus1$Barcode))
+bs.all$Barcode= as.numeric(bs.all$Barcode)
+
+#match
+match1= match(bs.all$Barcode, mus1$Barcode)
+matched= which(!is.na(match1))
+bs.all$DateCollected[matched]= mus1$DateCollected[na.omit(match1)]
+
+dates= as.data.frame(str_split(bs.all$DateCollected, "/", simplify = TRUE))
+names(dates)= c("month","day","year")
+dates$month= as.numeric(dates$month)
+dates$day= as.numeric(dates$day)
+dates$year= as.numeric(dates$year)
+dates$year[which(dates$year>20)]<- dates$year[which(dates$year>20)]+1900
+dates$year[which(dates$year<20)]<- dates$year[which(dates$year<20)]+2000
+bs.all$month= dates$month
+bs.all$day= dates$day
+bs.all$year= dates$year
+bs.all$timeperiod="current"
+bs.all$timeperiod[bs.all$Year<1990]="historic"
+
+tmp <- as.Date(paste(bs.all$day, bs.all$month, bs.all$year, sep="/"), format = "%d/%m/%Y")
+bs.all$doy_spec= as.numeric(format(tmp, "%j"))
+
+#plot doy vs size 
+plot.doy.size= ggplot(data=bs.all, aes(x=doy_spec, y=Mean_Femur, color=factor(elev), shape=timeperiod, group=Sites))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., scales="free")+
+  theme(legend.position = "bottom")+
+  xlab("Day of year of adulthood")+ ylab("Femur length (mm)")+
+  scale_color_viridis_d()
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("SizeDoy_museum.pdf",height = 12, width = 12)
+plot.doy.size
 dev.off()
