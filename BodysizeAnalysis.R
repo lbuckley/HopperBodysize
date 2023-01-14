@@ -307,12 +307,16 @@ Anova(mod1, type=3) #, singular.ok = T)
 # dredge(mod1) #full model most support
 
 mod.lmer <- lmer(Mean_Femur~time*elev*Sex*Species +
-                    (1|Sites),
+                    (1|Year/Sites),
                   REML = FALSE,
                   na.action = 'na.omit', data = bs.sub1)
 anova(mod.lmer)
 summary(mod.lmer)$coefficients
 coef(mod.lmer)
+plot_model(mod.lmer, type="pred",terms=c("elev","time","Species","Sex"), show.data=TRUE)
+
+#https://lmudge13.github.io/sample_code/mixed_effects.html
+#https://cran.r-project.org/web/packages/sjPlot/vignettes/plot_interactions.html
 
 #-------
 #By species

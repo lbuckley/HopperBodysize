@@ -226,7 +226,7 @@ plot.c2=ggplot(data=bs.all.sum, aes(x=MeanC1, y = mean, group= SexElev, shape=Se
   geom_point(size=3)+
   theme_bw()+ geom_smooth(method="lm", se=FALSE)+
   geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  scale_color_brewer(palette = "Spectral")
+  scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
 
 pdf("SizeMean_by_Clim.pdf",height = 12, width = 12)
 plot.c2
