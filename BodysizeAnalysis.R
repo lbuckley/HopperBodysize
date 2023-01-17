@@ -302,7 +302,6 @@ bs.sub1= bs.sub[,c("Mean_Femur","time","elev","Sex","Species","Sites")]
 bs.sub1= na.omit(bs.sub1)
 
 mod1= lm(Mean_Femur~time*elev*Sex*Species, data=bs.sub1, na.action = "na.fail")
-plot_model(mod1, type="pred",terms=c("elev","time","Species","Sex"), show.data=TRUE)
 Anova(mod1, type=3) #, singular.ok = T)
 # dredge(mod1) #full model most support
 
@@ -313,18 +312,17 @@ mod.lmer <- lmer(Mean_Femur~time*elev*Sex*Species +
 anova(mod.lmer)
 summary(mod.lmer)$coefficients
 coef(mod.lmer)
-plot_model(mod.lmer, type="pred",terms=c("elev","time","Species","Sex"), show.data=TRUE)
 
-#https://lmudge13.github.io/sample_code/mixed_effects.html
-#https://cran.r-project.org/web/packages/sjPlot/vignettes/plot_interactions.html
+plot_model(mod.lmer, type = "pred", terms = c("elev","time","Species","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type="pred",terms=c("elev","time","Species"), show.data=TRUE)
 
 #-------
 #By species
 #ANOVA output
-stat= c("sumsq","df","F","p","sumsq","df","F","p")
-vars= c("Intercept","time","elev","sex","time:elev","time:sex","elev:sex","time:elev:sex","residuals")
+stat= c("Sum Sq","NumDF","F value","Pr(>F)")
+vars= c("time","elev","sex","time:elev","time:sex","elev:sex","time:elev:sex")
 
-stats= array(data=NA, dim=c(length(specs),9,8),
+stats= array(data=NA, dim=c(length(specs),7,4),
              dimnames=list(specs,vars,stat) ) 
 
 #FIGURE 2- model output
@@ -334,19 +332,16 @@ modplots <- vector('list', length(specs))
 
 for(spec.k in 1:length(specs)){
 
-  mod1= lm(Mean_Femur~time*elev*Sex, data=bs.sub[which(bs.sub$Species==specs[spec.k]),])
-  stats[spec.k,,1:4]=as.matrix(Anova(mod1, type="III"))
-  
-  mod.lmer <- lmer(Mean_Femur~time*elev*Sex + (1|Sites),
+  mod.lmer <- lmer(Mean_Femur~time*elev*Sex + (1|Sites), #(1|Year/Sites)
                    REML = FALSE,
                    na.action = 'na.omit', data = bs.sub[which(bs.sub$Species==specs[spec.k]),])
-  stats[spec.k,2:8,5:8]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
+  stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
   
     #plot output
    message(spec.k)
    modplots[[spec.k]] <- local({
      spec.k <- spec.k
-     p1 <- plot_model(mod1, type="pred",terms=c("elev","time","Sex"), show.data=TRUE,
+     p1 <- plot_model(mod.lmer, type="pred",terms=c("elev","time","Sex"), show.data=TRUE,
                       title=specs[spec.k], legend.title = "period",
                       axis.title=c("elevation (m)","femur length (mm)"))
      print(p1)
@@ -366,13 +361,8 @@ stats[,,4]= signif(stats[,,4],3)
 #stats.all=rbind(stats[1,,],stats[2,,],stats[3,,],stats[4,,],stats[5,,],stats[6,,])
 #write.csv(stats[,,4],"Table1.csv")
 
-stats[,,c(4,8)]
-
-lm.sig= stats[,,c(4)]
-lmer.sig= stats[,,c(8)]
-lm.sig[lm.sig < 0.05] <- "*"
+lmer.sig= stats[,,4]
 lmer.sig[lmer.sig < 0.05] <- "*"
-
 
 #save coefficients
 #mo.p=summary(mod1)$coefficients
@@ -390,33 +380,17 @@ ks.test(hist$Mean_Femur,curr$Mean_Femur)
 
 #---------------------
 # #species summary
-# "E. simplex"      
-# Factor: smaller over time, time:elev= more curvature?
-# Linear: smaller over time
-# 
 # "X. corallipes"   
-# Factor: time:elev= now smaller at higher elevations
-# Linear: smaller over time, particularly at high elevation 
-#   
-# "A. clavatus"     
-# Factor: signif time, time:elev Q: less curvature?, time:sex= males bigger over time; timehistoric:elev.Q:SexM= smaller at low elevations, bigger at large  
-# Linear: ns
+# time:elev= now smaller at higher elevations
 #   
 # "M. boulderensis" 
-# Factor: time:elev
-# Linear: time:elev:Sex= female bigger low, smaller high; males smaller low
+# time:elev:Sex= female bigger low, smaller high; males smaller low
 #   
 # "C. pellucida"    
-# Factor: time:elev: smaller at low elevation
-# Linear: time:elev: smaller at low elevation
-# 
-# "M. sanguinipes" 
-# Factor: no significant shifts
-# Linear: ns
-
+# time:elev: smaller at low elevation
+#
 # larger at low elevation for nymphal diapausers: E. simplex, X. corallipes (smaller high)
-# smaller at low elevation: A. clavatus, C.pellucida
+# smaller at low elevation: C.pellucida
 # M. boulderensis: female bigger low, smaller high; males smaller low
-# M. sanguipes: no change
 
 #=======================================
