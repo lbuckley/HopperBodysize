@@ -156,11 +156,31 @@ sd <- ncvar_get(nc.m,"sd") #snow depth
 tp <- ncvar_get(nc.m,"tp") #total precipitation
 #add soil temp, wind for microclimate?
 
-#DEAL WITH GRIDS
-nc.m.data= cbind(timestamp, t2m[1,], sd[1,], tp[1,])
-if(k==1) nc.m.all= nc.m.data
-if(k>1) nc.m.all= rbind(nc.m.all, nc.m.data)
+#combine data
+if(k==1) {
+  nc.m.data= cbind(year(timestamp),month(timestamp), t2m[1,], sd[1,], tp[1,])
+  nc.m.data= as.data.frame(nc.m.data)
+  names(nc.m.data)=c("year","month","t2m","sd","tp")
+  nc.m.data$site= "Boulder1"
+  
+  nc.m.data2= cbind(year(timestamp),month(timestamp), t2m[2,], sd[2,], tp[2,])
+  nc.m.data2= as.data.frame(nc.m.data2)
+  names(nc.m.data2)=c("year","month","t2m","sd","tp")
+  nc.m.data2$site= "Boulder2"
+  
+  nc.m.all= rbind(nc.m.data,nc.m.data2)
+  }
 
+if(k>1){
+  nc.m.data= cbind(year(timestamp),month(timestamp), t2m, sd, tp)
+  names(nc.m.data)=c("year","month","t2m","sd","tp")
+  
+  #add site info
+  if(k==2) nc.m.data$site= "Rollins"
+  if(k==3) nc.m.data$site= "Evans"
+
+  nc.m.all= rbind(nc.m.all, nc.m.data)
+  }
 #---
 #hr data
 
@@ -171,18 +191,52 @@ t <- ncvar_get(nc.hr, "time")
 timestamp <- as_datetime(c(t*60*60),origin="1900-01-01")
 
 #import the data
-t2m <- ncvar_get(nc.m,"t2m")
+t2m <- ncvar_get(nc.hr,"t2m")
 #add soil temp, wind for microclimate?
 
 #combine data
-#DEAL WITH GRIDS
-nc.m.data= cbind(timestamp, t2m[1,])
-if(k==1) nc.m.all= nc.m.data
-if(k>1) nc.m.all= rbind(nc.m.all, nc.m.data)
-
+if(k==1) {
+  nc.hr.data= cbind(year(timestamp),month(timestamp), hour(timestamp), t2m[1,])
+  nc.hr.data= as.data.frame(nc.hr.data)
+  names(nc.hr.data)=c("year","month","hour","t2m")
+  nc.hr.data$site= "Boulder1"
+  
+  nc.hr.data2= cbind(year(timestamp),month(timestamp), hour(timestamp), t2m[2,])
+  nc.hr.data2= as.data.frame(nc.hr.data2)
+  names(nc.hr.data2)=c("year","month","hour","t2m")
+  nc.hr.data2$site= "Boulder2"
+  
+  nc.hr.all= rbind(nc.hr.data,nc.hr.data2)
 }
 
-#close the conection with the ncdf file
+if(k>1){
+  nc.hr.data= cbind(year(timestamp),month(timestamp), hour(timestamp), t2m)
+  names(nc.hr.data)=c("year","month","hour","t2m")
+  
+  #add site info
+  if(k==2) nc.hr.data$site= "Rollins"
+  if(k==3) nc.hr.data$site= "Evans"
+  
+  nc.hr.all= rbind(nc.hr.all, nc.hr.data)
+}
+
+} #end site loop
+
+#close the connection with the ncdf file
 nc_close(nc.m)
 nc_close(nc.hr)
+
+#------------------------
+#add climate data to bodysize dataset
+
+#add closest CO grid cell 
+diffs= cbind(abs(sites.grid$Longitude+105.59), abs(sites.grid$Longitude+105.34) )
+sites.grid$lon.ind= apply(diffs, 1, FUN = which.min)
+
+bs.all$SitesYear= paste(bs.all$Sites, bs.all$Year, sep="")
+match1= match(bs.all$SitesYear, nc.m.all)
+
+bs.all
+
+
 
