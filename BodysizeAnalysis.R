@@ -203,6 +203,14 @@ tab1= cbind(tab[,1,,1],tab[,1,,2],tab[,2,,1],tab[,2,,2],tab[,3,,1],tab[,3,,2],ta
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 write.csv(tab1,"Counts_Sep2022.csv")
 
+#Use date to assess temp, size relationship for all specimens
+bs.all$Year= as.numeric(as.character(bs.all$Year))
+bs.all$Year[which(bs.all$Year==1048)]<- 1948
+bs.all$Year[which(bs.all$Year==1049)]<- 1949
+bs.all$Year[which(bs.all$Year==1058)]<- 1958
+bs.all$Year[which(bs.all$Year==1059)]<- 1959
+bs.all$Year[which(bs.all$Year==1060)]<- 1960
+
 #Write out data
 write.csv(bs.sub, "BodySize_sub_Sept2022.csv")
 

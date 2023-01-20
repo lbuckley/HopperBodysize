@@ -9,6 +9,10 @@ library(ncdf4)
 library(tidyverse)
 library(lubridate)
 
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
+bs.all= read.csv("BodySize_sub_Sept2022.csv")
+
+#----------
 #get site lat, lon
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 sites= read.csv("HopperSites_keep2022.csv")
@@ -173,6 +177,7 @@ if(k==1) {
 
 if(k>1){
   nc.m.data= cbind(year(timestamp),month(timestamp), t2m, sd, tp)
+  nc.m.data= as.data.frame(nc.m.data)
   names(nc.m.data)=c("year","month","t2m","sd","tp")
   
   #add site info
@@ -196,22 +201,23 @@ t2m <- ncvar_get(nc.hr,"t2m")
 
 #combine data
 if(k==1) {
-  nc.hr.data= cbind(year(timestamp),month(timestamp), hour(timestamp), t2m[1,])
+  nc.hr.data= cbind(year(timestamp),month(timestamp), day(timestamp), hour(timestamp), yday(timestamp), t2m[1,])
   nc.hr.data= as.data.frame(nc.hr.data)
-  names(nc.hr.data)=c("year","month","hour","t2m")
+  names(nc.hr.data)=c("year","month","day","hour","doy","t2m")
   nc.hr.data$site= "Boulder1"
   
-  nc.hr.data2= cbind(year(timestamp),month(timestamp), hour(timestamp), t2m[2,])
+  nc.hr.data2= cbind(year(timestamp),month(timestamp), day(timestamp), hour(timestamp), yday(timestamp), t2m[2,])
   nc.hr.data2= as.data.frame(nc.hr.data2)
-  names(nc.hr.data2)=c("year","month","hour","t2m")
+  names(nc.hr.data2)=c("year","month","day","hour","doy","t2m")
   nc.hr.data2$site= "Boulder2"
   
   nc.hr.all= rbind(nc.hr.data,nc.hr.data2)
 }
 
 if(k>1){
-  nc.hr.data= cbind(year(timestamp),month(timestamp), hour(timestamp), t2m)
-  names(nc.hr.data)=c("year","month","hour","t2m")
+  nc.hr.data= cbind(year(timestamp),month(timestamp), day(timestamp), hour(timestamp), yday(timestamp), t2m)
+  nc.hr.data= as.data.frame(nc.hr.data)
+  names(nc.hr.data)=c("year","month","day","hour","doy","t2m")
   
   #add site info
   if(k==2) nc.hr.data$site= "Rollins"
@@ -229,14 +235,138 @@ nc_close(nc.hr)
 #------------------------
 #add climate data to bodysize dataset
 
+#aggregate data
+#monthly data
+#spring means March-May
+#Summer means June-July
+
+clim.m= nc.m.all[nc.m.all$month %in% c(3:5),]
+clim.m= aggregate(clim.m, list(clim.m$year, clim.m$site), FUN=mean)
+names(clim.m)[2]="site"
+clim.m= clim.m[,c("site","year","t2m","tp","sd")]
+#convert to C
+clim.m$t2m= clim.m$t2m -273.15
+
+#hr data
+#spring degree days
+nc.hr.data$t2m= nc.hr.data$t2m -273.15
+diffs= cbind(nc.hr.data$t2m-12,0)
+nc.hr.data$dd= apply(diffs, 1, FUN = max)
+  
+nc.hr.sum = nc.hr.data %>% group_by(year,site) %>% arrange(doy) %>% mutate(cdd_sum = cumsum(dd/24)) 
+#cdd on June 1
+nc.hr.sum= nc.hr.sum[nc.hr.sum$doy==152 & nc.hr.sum$hour==0,]
+nc.hr.sum$siteyear= paste(nc.hr.sum$site, nc.hr.sum$year,sep="")
+clim.m$siteyear= paste(clim.m$site, clim.m$year,sep="")
+
+match1= match(clim.m$siteyear, nc.hr.sum$siteyear)
+clim.m$springdd= nc.hr.sum$cdd_sum[match1]
+
 #add closest CO grid cell 
 diffs= cbind(abs(sites.grid$Longitude+105.59), abs(sites.grid$Longitude+105.34) )
-sites.grid$lon.ind= apply(diffs, 1, FUN = which.min)
+sites.grid$clim.site= c("Boulder1", "Boulder2")[apply(diffs, 1, FUN = which.min)]
+sites.ind$clim.site=c("Rollins", "Evans", "Evans")
+sites.clim= rbind(sites.grid, sites.ind)
 
-bs.all$SitesYear= paste(bs.all$Sites, bs.all$Year, sep="")
-match1= match(bs.all$SitesYear, nc.m.all)
+#match to grids
+match1= match(bs.all$Sites, sites.clim$Site)
+bs.all$clim.site= sites.clim$clim.site[match1]
 
-bs.all
+bs.all$SitesYear= paste(bs.all$clim.site, bs.all$Year, sep="")
+clim.m$SitesYear= paste(clim.m$site, clim.m$year, sep="")
+
+match1= match(bs.all$SitesYear, clim.m$SitesYear)
+bs.all$t2m= clim.m$t2m[match1]
+bs.all$sd= clim.m$sd[match1]
+bs.all$tp= clim.m$tp[match1]
+bs.all$springdd= clim.m$springdd[match1]
+
+#--------------------------
+#plot
+
+#add mean and se
+bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summarise,
+                  N    = length(Mean_Femur),
+                  mean = mean(Mean_Femur),
+                  std   = sd(Mean_Femur),
+                  t2m= mean(t2m),
+                  sd= mean(sd),
+                  tp= mean(tp),
+                  springdd= mean(springdd)   )
+bs.all.sum$se= bs.all.sum$std / sqrt(bs.all.sum$mean)
 
 
+plot.c2=ggplot(data=bs.all.sum, aes(x=t2m, y = mean, group= SexElev, shape=Sex, color=factor(elev) ))+
+  facet_wrap(Species~., scales="free")+
+  geom_point(size=3)+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
 
+#---------------------------
+#analysis
+
+#combined model
+bs.sub1= bs.all[,c("Mean_Femur","Year","time","elev","Sex","Species","Sites","t2m","sd","tp")] #,"springdd"
+bs.sub1= na.omit(bs.sub1)
+#check drops
+
+mod.lmer <- lmer(Mean_Femur~t2m*time*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.sub1)
+anova(mod.lmer)
+summary(mod.lmer)$coefficients
+coef(mod.lmer)
+
+plot_model(mod.lmer, type = "pred", terms = c("t2m","time"), show.data=TRUE)
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
+plot_model(mod.lmer, type = "pred", terms = c("t2m","time","Sex","Species"), show.data=TRUE)
+dev.off()
+
+#-------
+#By species
+
+bs.scaled <- transform(bs.sub1,
+                    t2m_cs=scale(t2m),
+                    sd_cs=scale(sd),
+                    tp_cs=scale(tp) )
+
+
+#ANOVA output
+stat= c("Sum Sq","NumDF","F value","Pr(>F)")
+vars= c("t2m","sd","sex","t2m*sd","t2m*sex","sd*sex","t2m*sd*sex")
+
+stats= array(data=NA, dim=c(length(specs),7,4),
+             dimnames=list(specs,vars,stat) ) 
+
+modplots <- vector('list', length(specs))
+
+for(spec.k in 1:length(specs)){
+  
+  mod.lmer <- lmer(Mean_Femur~t2m_cs*sd_cs*Sex + (1|Sites), #(1|Year/Sites)
+                   REML = FALSE,
+                   na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
+  stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
+  
+  #plot output
+  message(spec.k)
+  modplots[[spec.k]] <- local({
+    spec.k <- spec.k
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("t2m_cs","sd_cs","Sex"), show.data=TRUE,
+                     title=specs[spec.k])
+    print(p1)
+  })
+  
+} #end loop specs 
+
+#save figure
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("ModPlots_clim.pdf",height = 12, width = 12)
+(modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
+dev.off()
+
+lmer.sig= stats[,,4]
+lmer.sig[lmer.sig < 0.05] <- "*"
