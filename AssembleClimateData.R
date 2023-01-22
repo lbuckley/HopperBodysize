@@ -50,6 +50,19 @@ request.month <- list(
   "target" = "ERA5_month.nc"
 )
 
+request.month.early <- list(
+  "dataset_short_name" = "reanalysis-era5-land-monthly-means",
+  "product_type" = "monthly_averaged_reanalysis",
+  "variable" = c("2m_temperature", "leaf_area_index_low_vegetation", "skin_temperature", "snow_cover","snow_depth","snowfall","soil_temperature_level_1","total_precipitation"),
+  "year" = c('1950', '1958', '1959', '1960', '1961', '1962', '1963', '1964', '1979', '1981', '2006',
+             '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2022'),
+  "month" = c("03","04","05","06","07","08"),
+  "time" = "00:00",
+  "area" = "40.06/-105.59/39.99/-105.28",
+  "format" = "netcdf.zip",
+  "target" = "ERA5_month_early.zip"
+)
+
 request.hr <- list(
   "dataset_short_name" = "reanalysis-era5-single-levels",
   "product_type" = "reanalysis",
@@ -81,43 +94,56 @@ request.hr <- list(
   "target" = "ERA5_hr.nc"
 )
 
-for(k in 2:3){
+for(k in 1:3){
 
   if(k==1){
     request.month[[7]]<- "40.06/-105.59/39.99/-105.28"
+    request.month.early[[7]]<- "40.06/-105.59/39.99/-105.28"
     request.hr[[8]]<- "40.06/-105.59/39.99/-105.28"
     request.month[[9]]<- "COgrid_ERA5_month.nc"
+    request.month.early[[9]]<- "COgrid_ERA5_month.zip"
     request.hr[[10]]<- "COgrid_ERA5_hr.nc"
   }
   
   if(k==2){
     request.month[[7]]<- "39.94/-105.67/39.93/-105.66"
+    request.month.early[[7]]<- "39.94/-105.67/39.93/-105.66"
     request.hr[[8]]<- "39.94/-105.67/39.93/-105.66"
     request.month[[9]]<- "Rollins_ERA5_month.nc"
+    request.month.early[[9]]<- "Rollins_ERA5_month.zip"
     request.hr[[10]]<- "Rollins_ERA5_hr.nc"
   }
   
   if(k==3){
     request.month[[7]]<- "39.60/-105.64/39.58/-105.63"
+    request.month.early[[7]]<- "39.60/-105.64/39.58/-105.63"
     request.hr[[8]]<- "39.60/-105.64/39.58/-105.63"
     request.month[[9]]<- "Evans_ERA5_month.nc"
+    request.month.early[[9]]<- "Evans_ERA5_month.zip"
     request.hr[[10]]<- "Evans_ERA5_hr.nc"
   }
   
   #request
+  # file <- wf_request(
+  #   user     = "78176",   # user ID (for authentification)
+  #   request  = request.month,  # the request
+  #   transfer = TRUE,     # download the file
+  #   path     = "."       # store data in current working directory
+  # )
+  
   file <- wf_request(
     user     = "78176",   # user ID (for authentification)
-    request  = request.month,  # the request
+    request  = request.month.early,  # the request
     transfer = TRUE,     # download the file
     path     = "."       # store data in current working directory
   )
   
-  file <- wf_request(
-    user     = "78176",   # user ID (for authentification)
-    request  = request.hr,  # the request
-    transfer = TRUE,     # download the file
-    path     = "."       # store data in current working directory
-  )
+  # file <- wf_request(
+  #   user     = "78176",   # user ID (for authentification)
+  #   request  = request.hr,  # the request
+  #   transfer = TRUE,     # download the file
+  #   path     = "."       # store data in current working directory
+  # )
 }
  
 #----
@@ -130,14 +156,17 @@ for(k in 1:3){
 #open the connection with the ncdf file
 if(k==1){ 
   nc.m <- nc_open("COgrid_ERA5_month.nc")
+  nc.me <- nc_open("COgrid_ERA5_month_early.nc")
   nc.hr <- nc_open("COgrid_ERA5_hr.nc")
 }
   if(k==2){ 
     nc.m <- nc_open("Rollins_ERA5_month.nc")
+    nc.me <- nc_open("Rollins_ERA5_month_early.nc")
     nc.hr <- nc_open("Rollins_ERA5_hr.nc")
   }
   if(k==3){ 
     nc.m <- nc_open("Evans_ERA5_month.nc")
+    nc.me <- nc_open("Evans_ERA5_month_early.nc")
     nc.hr <- nc_open("Evans_ERA5_hr.nc")
   }
 
@@ -185,7 +214,54 @@ if(k>1){
   if(k==3) nc.m.data$site= "Evans"
 
   nc.m.all= rbind(nc.m.all, nc.m.data)
-  }
+}
+#---
+#monthly dataset with earlier data
+
+#extract the time
+t <- ncvar_get(nc.me, "time")
+#convert the hours into date + hour
+#as_datetime() function of the lubridate package needs seconds
+timestamp <- as_datetime(c(t*60*60),origin="1900-01-01")
+
+#import the data
+t2m <- ncvar_get(nc.me,"t2m")
+lai_lv <- ncvar_get(nc.me,"lai_lv")
+skt <- ncvar_get(nc.me,"skt")
+snowc <- ncvar_get(nc.me,"snowc")
+sde <- ncvar_get(nc.me,"sde") #snow depth
+sf <- ncvar_get(nc.me,"sf") #snow fall
+stl1 <- ncvar_get(nc.me,"stl1") #soil temp
+tp <- ncvar_get(nc.me,"tp") #total precipitation
+#add soil temp, wind for microclimate?
+
+#combine data
+if(k==1) {
+  nc.me.data= cbind(year(timestamp),month(timestamp), t2m[1,], sde[1,], tp[1,], lai_lv[1,], skt[1,], stl1[1,])
+  nc.me.data= as.data.frame(nc.me.data)
+  names(nc.me.data)=c("year","month","t2m","sd","tp","lai","skt","st")
+  nc.me.data$site= "Boulder1"
+  
+  nc.me.data2= cbind(year(timestamp),month(timestamp), t2m[2,], sde[2,], tp[2,], lai_lv[1,], skt[1,], stl1[1,] )
+  nc.me.data2= as.data.frame(nc.me.data2)
+  names(nc.me.data2)=c("year","month","t2m","sd","tp","lai","skt","st")
+  nc.me.data2$site= "Boulder2"
+  
+  nc.me.all= rbind(nc.me.data,nc.me.data2)
+}
+
+if(k>1){
+  nc.me.data= cbind(year(timestamp),month(timestamp), t2m, sde, tp, lai_lv, skt, stl1)
+  nc.me.data= as.data.frame(nc.me.data)
+  names(nc.me.data)=c("year","month","t2m","sd","tp","lai","skt","st")
+  
+  #add site info
+  if(k==2) nc.me.data$site= "Rollins"
+  if(k==3) nc.me.data$site= "Evans"
+  
+  nc.me.all= rbind(nc.me.all, nc.me.data)
+}
+
 #---
 #hr data
 
@@ -247,6 +323,13 @@ clim.m= clim.m[,c("site","year","t2m","tp","sd")]
 #convert to C
 clim.m$t2m= clim.m$t2m -273.15
 
+clim.me= nc.me.all[nc.me.all$month %in% c(3:5),]
+clim.me= aggregate(clim.me, list(clim.me$year, clim.me$site), FUN=mean)
+names(clim.me)[2]="site"
+clim.me= clim.me[,c("site","year","t2m","tp","sd","lai","skt","st")]
+#convert to C
+clim.me$t2m= clim.me$t2m -273.15
+
 #hr data
 #spring degree days
 nc.hr.data$t2m= nc.hr.data$t2m -273.15
@@ -274,12 +357,25 @@ bs.all$clim.site= sites.clim$clim.site[match1]
 
 bs.all$SitesYear= paste(bs.all$clim.site, bs.all$Year, sep="")
 clim.m$SitesYear= paste(clim.m$site, clim.m$year, sep="")
+clim.me$SitesYear= paste(clim.me$site, clim.me$year, sep="")
 
-match1= match(bs.all$SitesYear, clim.m$SitesYear)
-bs.all$t2m= clim.m$t2m[match1]
-bs.all$sd= clim.m$sd[match1]
-bs.all$tp= clim.m$tp[match1]
-bs.all$springdd= clim.m$springdd[match1]
+bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, sep="")
+
+# #add initial monthly data
+# match1= match(bs.all$SitesYear, clim.m$SitesYear)
+# bs.all$t2m= clim.m$t2m[match1]
+# bs.all$sd= clim.m$sd[match1]
+# bs.all$tp= clim.m$tp[match1]
+# bs.all$springdd= clim.m$springdd[match1]
+
+#add extended monthly data
+match1= match(bs.all$SitesYear, clim.me$SitesYear)
+bs.all$t2m= clim.me$t2m[match1]
+bs.all$sd= clim.me$sd[match1]
+bs.all$tp= clim.me$tp[match1]
+bs.all$lai= clim.me$lai[match1]
+bs.all$skt= clim.me$skt[match1]
+bs.all$st= clim.me$st[match1]
 
 #--------------------------
 #plot
@@ -292,7 +388,11 @@ bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summaris
                   t2m= mean(t2m),
                   sd= mean(sd),
                   tp= mean(tp),
-                  springdd= mean(springdd)   )
+                  #springdd= mean(springdd),
+                  lai= mean(lai),
+                  skt= mean(skt),
+                  st= mean(st)
+                  )
 bs.all.sum$se= bs.all.sum$std / sqrt(bs.all.sum$mean)
 
 
@@ -302,6 +402,22 @@ plot.c2=ggplot(data=bs.all.sum, aes(x=t2m, y = mean, group= SexElev, shape=Sex, 
   theme_bw()+ geom_smooth(method="lm", se=FALSE)+
   geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
   scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
+
+bs.all.sum$time="historic"
+bs.all.sum$time[which(as.numeric(bs.all.sum$Year)>2000)]<-"current"
+bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="") 
+
+plot.c3=ggplot(data=bs.all.sum, aes(x=t2m, y = mean, group= SexTime, shape=Sex, color=time ))+
+  facet_wrap(Species~., scales="free")+
+  geom_point(size=3)+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black") 
+  #+ scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("ModPlots_clim_time.pdf",height = 8, width = 9)
+plot.c3
+dev.off()
 
 #---------------------------
 #analysis
@@ -337,7 +453,7 @@ bs.scaled <- transform(bs.sub1,
 
 #ANOVA output
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
-vars= c("t2m","sd","sex","t2m*sd","t2m*sex","sd*sex","t2m*sd*sex")
+vars= c("t2m","time","sex","t2m*time","t2m*sex","time*sex","t2m*time*sex")
 
 stats= array(data=NA, dim=c(length(specs),7,4),
              dimnames=list(specs,vars,stat) ) 
@@ -346,7 +462,8 @@ modplots <- vector('list', length(specs))
 
 for(spec.k in 1:length(specs)){
   
-  mod.lmer <- lmer(Mean_Femur~t2m_cs*sd_cs*Sex + (1|Sites), #(1|Year/Sites)
+ # mod.lmer <- lmer(Mean_Femur~t2m_cs*sd_cs*Sex + (1|Sites), #(1|Year/Sites)
+  mod.lmer <- lmer(Mean_Femur~t2m_cs*time*Sex + (1|Year/Sites), #(1|Year/Sites)
                    REML = FALSE,
                    na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
   stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
@@ -355,7 +472,7 @@ for(spec.k in 1:length(specs)){
   message(spec.k)
   modplots[[spec.k]] <- local({
     spec.k <- spec.k
-    p1 <- plot_model(mod.lmer, type="pred",terms=c("t2m_cs","sd_cs","Sex"), show.data=TRUE,
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("t2m_cs","time","Sex"), show.data=TRUE,
                      title=specs[spec.k])
     print(p1)
   })
@@ -370,3 +487,7 @@ dev.off()
 
 lmer.sig= stats[,,4]
 lmer.sig[lmer.sig < 0.05] <- "*"
+
+#generally smaller through time (evolution) but larger with temperature (plasticity)?
+#time effects: clavatus, pellucida
+#temp*time*sex: simplex
