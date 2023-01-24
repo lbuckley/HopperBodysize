@@ -330,6 +330,20 @@ clim.me= clim.me[,c("site","year","t2m","tp","sd","lai","skt","st")]
 #convert to C
 clim.me$t2m= clim.me$t2m -273.15
 
+#estimate climate anomaly
+#or use: https://cds.climate.copernicus.eu/cdsapp#!/dataset/ecv-for-climate-change?tab=overview
+clim.site.me= aggregate(clim.me, list(clim.me$site), FUN=mean)
+names(clim.site.me)[1]<- "site"
+match1= match(clim.me$site, clim.site.me$site)
+clim.me$t2m.anom= clim.me$t2m - clim.site.me$t2m[match1]
+
+#body size anomaly
+bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
+bs.size.m= aggregate(bs.all[,c("SpecElevSex","Mean_Femur")], list(bs.all$SpecElevSex), FUN=mean)
+names(bs.size.m)[1]<-"SpecElevSex"
+match1= match(bs.all$SpecElevSex, bs.size.m$SpecElevSex)
+bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]
+
 #hr data
 #spring degree days
 nc.hr.data$t2m= nc.hr.data$t2m -273.15
@@ -371,6 +385,7 @@ bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, sep="")
 #add extended monthly data
 match1= match(bs.all$SitesYear, clim.me$SitesYear)
 bs.all$t2m= clim.me$t2m[match1]
+bs.all$t2m.anom= clim.me$t2m.anom[match1]
 bs.all$sd= clim.me$sd[match1]
 bs.all$tp= clim.me$tp[match1]
 bs.all$lai= clim.me$lai[match1]
@@ -385,7 +400,10 @@ bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summaris
                   N    = length(Mean_Femur),
                   mean = mean(Mean_Femur),
                   std   = sd(Mean_Femur),
+                  mean.anom = mean(Femur.anom),
+                  std.anom   = sd(Femur.anom),
                   t2m= mean(t2m),
+                  t2m.anom= mean(t2m.anom),
                   sd= mean(sd),
                   tp= mean(tp),
                   #springdd= mean(springdd),
@@ -393,41 +411,45 @@ bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summaris
                   skt= mean(skt),
                   st= mean(st)
                   )
-bs.all.sum$se= bs.all.sum$std / sqrt(bs.all.sum$mean)
+bs.all.sum$se= bs.all.sum$std / sqrt(bs.all.sum$N)
+bs.all.sum$se.anom= bs.all.sum$std.anom / sqrt(bs.all.sum$N)
 
-
-plot.c2=ggplot(data=bs.all.sum, aes(x=t2m, y = mean, group= SexElev, shape=Sex, color=factor(elev) ))+
+plot.c2=ggplot(data=bs.all.sum, aes(x=t2m.anom, y = mean, group= SexElev, shape=Sex, color=factor(elev)) )+
   facet_wrap(Species~., scales="free")+
   geom_point(size=3)+
   theme_bw()+ geom_smooth(method="lm", se=FALSE)+
   geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
+ # scale_shape_manual(values = c(21,24,25))+
+  scale_color_brewer(palette = "Spectral") +
+  ylab("Temperature anomaly (C)") +xlab("Femur size (mm)")
+#+ scale_y_continuous(trans='log')
 
 bs.all.sum$time="historic"
 bs.all.sum$time[which(as.numeric(bs.all.sum$Year)>2000)]<-"current"
 bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="") 
+bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 
-plot.c3=ggplot(data=bs.all.sum, aes(x=t2m, y = mean, group= SexTime, shape=Sex, color=time ))+
+plot.c3=ggplot(data=bs.all.sum, aes(x=t2m.anom, y = mean, shape=Sex, color=factor(elev), group=SexTimeElev))+
   facet_wrap(Species~., scales="free")+
   geom_point(size=3)+
-  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=time) )+
   geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black") 
   #+ scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_time.pdf",height = 8, width = 9)
-plot.c3
+plot.c2
 dev.off()
 
 #---------------------------
 #analysis
 
 #combined model
-bs.sub1= bs.all[,c("Mean_Femur","Year","time","elev","Sex","Species","Sites","t2m","sd","tp")] #,"springdd"
+bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites","t2m","t2m.anom","sd","tp")] #,"springdd"
 bs.sub1= na.omit(bs.sub1)
 #check drops
 
-mod.lmer <- lmer(Mean_Femur~t2m*time*Sex*Species +
+mod.lmer <- lmer(Femur.anom~t2m.anom*elev*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.sub1)
@@ -439,7 +461,7 @@ plot_model(mod.lmer, type = "pred", terms = c("t2m","time"), show.data=TRUE)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
-plot_model(mod.lmer, type = "pred", terms = c("t2m","time","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("t2m.anom","elev","time","Species"), show.data=TRUE)
 dev.off()
 
 #-------
@@ -448,14 +470,17 @@ dev.off()
 bs.scaled <- transform(bs.sub1,
                     t2m_cs=scale(t2m),
                     sd_cs=scale(sd),
-                    tp_cs=scale(tp) )
-
+                    tp_cs=scale(tp),
+                    elev_cs=scale(elev),
+                    t2m.anom_cs=scale(t2m.anom)
+                    )
 
 #ANOVA output
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
-vars= c("t2m","time","sex","t2m*time","t2m*sex","time*sex","t2m*time*sex")
+#vars= c("t2m","time","sex","t2m*time","t2m*sex","time*sex","t2m*time*sex")
+vars= c("t2m.anom","elev","time","Sex","t2m.anom:elev","t2m.anom:time","elev:time","t2m.anom:Sex","elev:Sex","time:Sex","t2m.anom:elev:time","t2m.anom:elev:Sex","t2m.anom:time:Sex","elev:time:Sex","t2m.anom:elev:time:Sex")
 
-stats= array(data=NA, dim=c(length(specs),7,4),
+stats= array(data=NA, dim=c(length(specs),15,4),
              dimnames=list(specs,vars,stat) ) 
 
 modplots <- vector('list', length(specs))
@@ -463,7 +488,7 @@ modplots <- vector('list', length(specs))
 for(spec.k in 1:length(specs)){
   
  # mod.lmer <- lmer(Mean_Femur~t2m_cs*sd_cs*Sex + (1|Sites), #(1|Year/Sites)
-  mod.lmer <- lmer(Mean_Femur~t2m_cs*time*Sex + (1|Year/Sites), #(1|Year/Sites)
+  mod.lmer <- lmer(Mean_Femur~t2m.anom_cs*elev_cs*time*Sex + (1|Year/Sites), #(1|Year/Sites)
                    REML = FALSE,
                    na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
   stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
@@ -472,8 +497,7 @@ for(spec.k in 1:length(specs)){
   message(spec.k)
   modplots[[spec.k]] <- local({
     spec.k <- spec.k
-    p1 <- plot_model(mod.lmer, type="pred",terms=c("t2m_cs","time","Sex"), show.data=TRUE,
-                     title=specs[spec.k])
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("t2m.anom_cs","elev_cs","time","Sex"), show.data=TRUE) #, title=specs[spec.k])
     print(p1)
   })
   
@@ -491,3 +515,8 @@ lmer.sig[lmer.sig < 0.05] <- "*"
 #generally smaller through time (evolution) but larger with temperature (plasticity)?
 #time effects: clavatus, pellucida
 #temp*time*sex: simplex
+
+#shift to anomalie then use elevation as well
+
+
+
