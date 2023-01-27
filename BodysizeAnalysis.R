@@ -216,17 +216,6 @@ write.csv(bs.sub, "BodySize_sub_Sept2022.csv")
 
 bs.all= bs.sub
 #------
-#scatter plot
-#by elevation
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("Size_by_ElevTime.pdf",height = 12, width = 12)
-ggplot(data=bs.sub, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) + 
-    facet_wrap(Species~., scales="free")+geom_point(size=2)+
-    theme_bw()+ geom_smooth(method="lm", aes(lty=Sex) )+
-  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
-  scale_shape_manual(values = c(16, 21))
-dev.off()
-
 #Violin plot
 bs.sub$SexTime= paste(bs.sub$Sex, bs.sub$time, sep="")
 bs.sub$group= paste(bs.sub$Species, bs.sub$elev, bs.sub$Sex, bs.sub$time, sep="")
@@ -305,77 +294,6 @@ vplot
 dev.off()
 
 #-------
-#combined model
-bs.sub1= bs.sub[,c("Mean_Femur","time","elev","Sex","Species","Sites")]
-bs.sub1= na.omit(bs.sub1)
-
-mod1= lm(Mean_Femur~time*elev*Sex*Species, data=bs.sub1, na.action = "na.fail")
-Anova(mod1, type=3) #, singular.ok = T)
-# dredge(mod1) #full model most support
-
-mod.lmer <- lmer(Mean_Femur~time*elev*Sex*Species +
-                    (1|Year/Sites),
-                  REML = FALSE,
-                  na.action = 'na.omit', data = bs.sub1)
-anova(mod.lmer)
-summary(mod.lmer)$coefficients
-coef(mod.lmer)
-
-plot_model(mod.lmer, type = "pred", terms = c("elev","time","Species","Sex"), show.data=TRUE)
-plot_model(mod.lmer, type="pred",terms=c("elev","time","Species"), show.data=TRUE)
-
-#-------
-#By species
-#ANOVA output
-stat= c("Sum Sq","NumDF","F value","Pr(>F)")
-vars= c("time","elev","sex","time:elev","time:sex","elev:sex","time:elev:sex")
-
-stats= array(data=NA, dim=c(length(specs),7,4),
-             dimnames=list(specs,vars,stat) ) 
-
-#FIGURE 2- model output
-bs.sub$time= factor(bs.sub$time, levels=c("current","historic"), ordered=T)
-
-modplots <- vector('list', length(specs))
-
-for(spec.k in 1:length(specs)){
-
-  mod.lmer <- lmer(Mean_Femur~time*elev*Sex + (1|Sites), #(1|Year/Sites)
-                   REML = FALSE,
-                   na.action = 'na.omit', data = bs.sub[which(bs.sub$Species==specs[spec.k]),])
-  stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
-  
-    #plot output
-   message(spec.k)
-   modplots[[spec.k]] <- local({
-     spec.k <- spec.k
-     p1 <- plot_model(mod.lmer, type="pred",terms=c("elev","time","Sex"), show.data=TRUE,
-                      title=specs[spec.k], legend.title = "period",
-                      axis.title=c("elevation (m)","femur length (mm)"))
-     print(p1)
-   })
-   
-} #end loop specs 
-
-#save figure
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("ModPlots.pdf",height = 12, width = 12)
-(modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
-dev.off()
-
-#save output
-#round
-stats[,,4]= signif(stats[,,4],3)
-#stats.all=rbind(stats[1,,],stats[2,,],stats[3,,],stats[4,,],stats[5,,],stats[6,,])
-#write.csv(stats[,,4],"Table1.csv")
-
-lmer.sig= stats[,,4]
-lmer.sig[lmer.sig < 0.05] <- "*"
-
-#save coefficients
-#mo.p=summary(mod1)$coefficients
-#signif(), round()
-
 # perform a two-sample Kolmogorov-Smirnov test
 bs.sub1= subset(bs.sub, bs.sub$Species=="E. simplex" )
 bs.sub2= subset(bs.sub1, bs.sub1$Sites==c("Chautauqua Mesa") )

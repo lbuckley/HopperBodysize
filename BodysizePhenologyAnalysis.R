@@ -74,7 +74,7 @@ plot.doy.diff= ggplot(data=agg.size.yr, aes(x=doy_adult_diff, y=Mean_Femur_diff,
   theme(legend.position = "bottom")+
   xlab("Delta Day of year of adulthood")+ ylab("Delta Femur length (mm)")
   
-plot.gdd.diff= ggplot(data=agg.size.yr, aes(x=gdd_adult_diff, y=Mean_Femur_diff, color=Species, shape=timeperiod, group=SpSi, lty=Sites))+ 
+plot.gdd.diff= ggplot(data=agg.size.yr, aes(x=gdd_adult_diff, y=Mean_Femur_diff, color=Species, shape=timeperiod, group=SpSi, lty=Sites))+
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   theme(legend.position = "bottom")+
   xlab("Delta GDDs at adulthood")+ ylab("Delta Femur length (mm)")
@@ -170,7 +170,7 @@ clim.yr= read.csv("AlexanderYearlyClimate.csv")
 match1= match(bs.all$year, clim.yr$year)
 matched= which(!is.na(match1))
 
-bs.all$Mean[matched]= clim.yr$Mean[match1[matched]] 
+bs.all$MeanClim[matched]= clim.yr$Mean[match1[matched]] 
 bs.all$dd[matched]= clim.yr$dd[match1[matched]] 
 bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]] 
 bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
@@ -184,6 +184,7 @@ bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, paste="")
 bs.all$SexElevYr= paste(bs.all$Sex, bs.all$elev, bs.all$year, paste="")
 #pick variable
 bs.all$clim.var = bs.all$MeanC1
+bs.all.sum$clim.var = bs.all.sum$MeanC1
 
 #MeanC1, Mean, dd, dd_early, SpringPre, SpringSnow
 size.clim.c1= ggplot(data=bs.all, aes(x=clim.var, y = Mean_Femur, group= SexElev, color=factor(elev), fill=factor(elev) ))+
@@ -202,7 +203,7 @@ bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summaris
                   mean = mean(Mean_Femur),
                   sd   = sd(Mean_Femur),
                   MeanC1= mean(MeanC1),
-                  Mean= mean(Mean),
+                 # Mean= mean(Mean),
                   dd= mean(dd),
                   dd_early= mean(dd_early),
                   SpringPre= mean(SpringPre),
