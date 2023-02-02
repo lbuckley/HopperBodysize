@@ -2,6 +2,9 @@ library(stringr)
 
 #relate to phenology
 
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+bs.all= read.csv("BodySize_wClim.csv")
+
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
 dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
 
@@ -9,6 +12,7 @@ dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
 dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","spsiteyear","doy_adult","gdd_adult")]
 
 #match to body size data
+bs.sun= bs.all
 gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
 bs.sub$gp= gp[match(bs.sub$Species, specs)]
 bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
@@ -52,6 +56,23 @@ plot.gdd= ggplot(data=agg.size.yr, aes(x=gdd_adult, y=Mean_Femur, color=Species,
   facet_wrap(Sites~., scales="free")+
   theme(legend.position = "bottom")+
   xlab("GDDs at adulthood")+ ylab("Femur length (mm)")
+
+### FIX
+#estimate doy anomaly
+bs1$SpecElevSex= paste(bs1$Species, bs1$elev, bs1$Sex, sep="")
+bs.doy.m= aggregate(bs1[,c("SpecElevSex","doy_adult","gdd_adult")], list(bs1$SpecElevSex), FUN=mean, na.rm=TRUE)
+names(bs.doy.m)[1]<-"SpecElevSex"
+match1= match(bs1$SpecElevSex, bs.doy.m$SpecElevSex)
+bs1$doy.anom= bs1$doy_adult - bs.doy.m$doy_adult[match1]
+bs1$gdd.anom= bs1$gdd_adult - bs.doy.m$gdd_adult[match1]
+
+mod.lmer <- lmer(Femur.anom~doy_spec*Sex*Species + #include time?
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs1)
+
+plot_model(mod.lmer, type = "pred", terms = c("doy_spec","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "slope")
 
 #-----
 #means by time period
@@ -267,8 +288,15 @@ bs.all$doy_spec= as.numeric(format(tmp, "%j"))
 #drop low value for C. pellucida
 bs.all= bs.all[-which(bs.all$doy_spec==55),]
 
+#estimate anomaly
+bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
+bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec")], list(bs.all$SpecElevSex), FUN=mean)
+names(bs.doy.m)[1]<-"SpecElevSex"
+match1= match(bs.all$SpecElevSex, bs.doy.m$SpecElevSex)
+bs.all$doy.anom= bs.all$doy_spec - bs.doy.m$doy_spec[match1]
+
 #plot doy vs size 
-plot.doy.size= ggplot(data=bs.all, aes(x=doy_spec, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
+plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
@@ -280,3 +308,14 @@ setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySi
 pdf("SizeDoy_museum.pdf",height = 12, width = 12)
 plot.doy.size
 dev.off()
+
+#analyze
+mod.lmer <- lmer(Femur.anom~doy_spec*Sex*Species + #include time?
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.all)
+
+plot_model(mod.lmer, type = "pred", terms = c("doy_spec","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "slope")
+
+

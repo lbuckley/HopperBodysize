@@ -72,10 +72,16 @@ bs.scaled <- transform(bs.sub1,
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
 #time model
-mod.lmer <- lmer(Mean_Femur~time*elev*Sex*Species +
+bs.sub1$elev_cs= scale(bs.sub1$elev)
+bs.sub1$Species= factor(bs.sub1$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+
+mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE,
-                 na.action = 'na.omit', data = bs.sub1)
+                 na.action = 'na.omit', data = bs.sub1) #[-which(bs.sub1$Species=="X. corallipes"),]
+
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
 
 #time + climate model
 mod.lmer <- lmer(Femur.anom~t2m.anom_cs*elev_cs*time*Sex*Species +
@@ -92,7 +98,7 @@ mod.lmer <- lmer(Femur.anom~t2m.anom+time +
                    t2m.anom:elev_cs:Species +t2m.anom:Sex:Species +t2m.anom:elev_cs:Sex:Species+
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
+                 data = bs.scaled)  #drop [-which(bs.scaled$Species=="X. corallipes"),]?
 
 #split by Sex?
 #size in a year: determined by time period (vary by elevation, Sex, species), climate, 
@@ -107,14 +113,75 @@ plot_model(mod.lmer, type = "slope")
 plot_model(mod.lmer, type = "resid")
 plot_model(mod.lmer, type = "diag")
 
+plot_model(mod.lmer, type = "pred", terms = c("t2m.anom_cs","elev_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("t2m.anom_cs","elev_cs","time", "Species"), show.data=TRUE)
+
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
 plot_model(mod.lmer, type = "pred", terms = c("t2m.anom_cs", "elev_cs","Species","Sex"), show.data=TRUE)
 dev.off()
 
-#-------
-#By species
+#============================
+#By species time
 
+stat= c("Sum Sq","NumDF","F value","Pr(>F)")
+
+mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.sub1[which(bs.sub1$Species==specs[spec.k]),]) 
+
+vars= rownames(anova(mod.lmer))
+
+stats= array(data=NA, dim=c(length(specs),length(vars),4),
+             dimnames=list(specs,vars, stat) ) 
+
+modplots <- vector('list', length(specs))
+slopeplots <- vector('list', length(specs))
+
+for(spec.k in 1:length(specs)){
+  
+  mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex +
+                     (1|Year/Sites),
+                   REML = FALSE, na.action = 'na.fail', 
+                   data = bs.sub1[which(bs.sub1$Species==specs[spec.k]),]) 
+  
+  stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
+  
+  #plot output
+  message(spec.k)
+  modplots[[spec.k]] <- local({
+    spec.k <- spec.k
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("elev_cs","time"), show.data=TRUE, title=specs[spec.k])
+    print(p1)
+  })
+  
+  slopeplots[[spec.k]] <- local({
+    spec.k <- spec.k
+    p1 <- plot_model(mod.lmer, type="slope", title=specs[spec.k])
+    print(p1)
+  })
+  
+} #end loop specs 
+
+#save figure
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("ModPlots_time.pdf",height = 12, width = 12)
+(modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
+dev.off()
+
+pdf("SlopePlots_time.pdf",height = 12, width = 12)
+(slopeplots[[1]] | slopeplots[[4]]) / (slopeplots[[2]] | slopeplots[[5]]) / (slopeplots[[3]] | slopeplots[[6]])
+dev.off()
+
+lmer.sig= stats[,,4]
+lmer.sig[lmer.sig < 0.05] <- "*"
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+write.csv(lmer.sig, "ModSig_time.csv")
+
+#-------
+#By Species time + climate model
 #ANOVA output
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 
