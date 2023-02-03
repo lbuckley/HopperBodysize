@@ -12,7 +12,7 @@ dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
 dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","spsiteyear","doy_adult","gdd_adult")]
 
 #match to body size data
-bs.sun= bs.all
+bs.sub= bs.all
 gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
 bs.sub$gp= gp[match(bs.sub$Species, specs)]
 bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
@@ -40,8 +40,16 @@ bs1= merge(bs.sub, dat,
            by.x = "spsiteyear", by.y = "spsiteyear", all.x="TRUE")
 names(bs1)[which(names(bs1)=="doy_adult.y")]= "doy_adult"
 
+#estimate doy anomaly
+bs1$SpecElevSex= paste(bs1$Species, bs1$elev, bs1$Sex, sep="")
+bs.doy.m= aggregate(bs1[,c("SpecElevSex","doy_adult","gdd_adult")], list(bs1$SpecElevSex), FUN=mean, na.rm=TRUE)
+names(bs.doy.m)[1]<-"SpecElevSex"
+match1= match(bs1$SpecElevSex, bs.doy.m$SpecElevSex)
+bs1$doy.anom= bs1$doy_adult - bs.doy.m$doy_adult[match1]
+bs1$gdd.anom= bs1$gdd_adult - bs.doy.m$gdd_adult[match1]
+
 #plot body size means per year
-agg.size.yr= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$Year, bs1$elev, bs1$time), FUN="mean", na.rm = TRUE)
+agg.size.yr= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult","Femur.anom","doy.anom","gdd.anom")], by=list(bs1$Species, bs1$Sites, bs1$Year, bs1$elev, bs1$time), FUN="mean", na.rm = TRUE)
 names(agg.size.yr)[1:5]=c("Species", "Sites", "year", "elev","timeperiod")
 
 #plot relationship
@@ -57,21 +65,18 @@ plot.gdd= ggplot(data=agg.size.yr, aes(x=gdd_adult, y=Mean_Femur, color=Species,
   theme(legend.position = "bottom")+
   xlab("GDDs at adulthood")+ ylab("Femur length (mm)")
 
-### FIX
-#estimate doy anomaly
-bs1$SpecElevSex= paste(bs1$Species, bs1$elev, bs1$Sex, sep="")
-bs.doy.m= aggregate(bs1[,c("SpecElevSex","doy_adult","gdd_adult")], list(bs1$SpecElevSex), FUN=mean, na.rm=TRUE)
-names(bs.doy.m)[1]<-"SpecElevSex"
-match1= match(bs1$SpecElevSex, bs.doy.m$SpecElevSex)
-bs1$doy.anom= bs1$doy_adult - bs.doy.m$doy_adult[match1]
-bs1$gdd.anom= bs1$gdd_adult - bs.doy.m$gdd_adult[match1]
-
-mod.lmer <- lmer(Femur.anom~doy_spec*Sex*Species + #include time?
+#model
+mod.lmer <- lmer(Femur.anom~doy.anom*Sex*Species + #include time?
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs1)
 
-plot_model(mod.lmer, type = "pred", terms = c("doy_spec","Sex","Species"), show.data=TRUE)
+mod.lmer <- lmer(Femur.anom~gdd.anom*Sex*Species + #include time?
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs1)
+
+plot_model(mod.lmer, type = "pred", terms = c("doy.anom","Sex","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "slope")
 
 #-----
@@ -99,32 +104,6 @@ plot.gdd.diff= ggplot(data=agg.size.yr, aes(x=gdd_adult_diff, y=Mean_Femur_diff,
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   theme(legend.position = "bottom")+
   xlab("Delta GDDs at adulthood")+ ylab("Delta Femur length (mm)")
-
-#-----
-#plot as change body size, change phenology between historic and current
-agg= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult")], by=list(bs1$Species, bs1$Sites, bs1$time, bs1$elev), FUN="mean", na.rm = TRUE)
-names(agg)[1:4]=c("Species", "Sites", "time", "elev")
-
-#compare historic and current
-dm <- melt(agg, measure.vars = c("Mean_Femur","doy_adult","gdd_adult"))
-agg.w= dcast(dm, Species + Sites + elev ~ variable+time, mean, value.var = "value")
-
-#differences
-agg.w$d.size= agg.w$Mean_Femur_current - agg.w$Mean_Femur_historic
-agg.w$d.doy= agg.w$doy_adult_current - agg.w$doy_adult_historic
-agg.w$d.gdd= agg.w$gdd_adult_current - agg.w$gdd_adult_historic
-
-#code nymphal diapause
-agg.w$winter<- "egg"
-agg.w$winter[which(agg.w$Species %in% c("E. simplex", "X. corallipes"))]<- "nymphal"
-
-#plot
-ggplot(data=agg.w, aes(x=d.doy, y=d.size))+geom_point(aes(color=Species,shape=Sites))+ 
-  geom_vline(xintercept = 0)+geom_hline(yintercept = 0) #+geom_smooth(method="lm")
-
-ggplot(data=agg.w, aes(x=d.gdd, y=d.size))+geom_point(aes(color=Species,shape=Sites, fill=winter, size=1, stroke=3))+ 
-  geom_vline(xintercept = 0)+geom_hline(yintercept = 0)+scale_shape_manual(values=c(21,22,24))
-#nyphal diapausers respond differently
 
 #-------------------
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
@@ -197,63 +176,6 @@ bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]]
 bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
 bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
 
-#------------------------
-#Violin plot by climate
-dodge <- position_dodge(width = 1)
-jdodge <- position_jitterdodge(dodge.width = 1, jitter.width=1)
-bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, paste="")
-bs.all$SexElevYr= paste(bs.all$Sex, bs.all$elev, bs.all$year, paste="")
-#pick variable
-bs.all$clim.var = bs.all$MeanC1
-bs.all.sum$clim.var = bs.all.sum$MeanC1
-
-#MeanC1, Mean, dd, dd_early, SpringPre, SpringSnow
-size.clim.c1= ggplot(data=bs.all, aes(x=clim.var, y = Mean_Femur, group= SexElev, color=factor(elev), fill=factor(elev) ))+
-  facet_wrap(Species~., scales="free")+
-  geom_point(position=jdodge, aes(shape=Sex))+
-  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
-  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
-  geom_violin(aes(group=SexElevYr),alpha=0.6, width=0.5, position=dodge, scale="width")+
-  theme_modern()+
-  scale_shape_manual(values=c(21,24,25))+
-  ylab("Femur length (mm)")
-
-#add mean and se
-bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summarise,
-                  N    = length(Mean_Femur),
-                  mean = mean(Mean_Femur),
-                  sd   = sd(Mean_Femur),
-                  MeanC1= mean(MeanC1),
-                 # Mean= mean(Mean),
-                  dd= mean(dd),
-                  dd_early= mean(dd_early),
-                  SpringPre= mean(SpringPre),
-                  SpringSnow= mean(SpringSnow)  )
-bs.all.sum$se= bs.all.sum$sd / sqrt(bs.all.sum$mean)
-
-vclim= size.clim.c1 + 
-  geom_errorbar(data=bs.all.sum, position=position_dodge(width = 1), aes(x=clim.var, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  geom_point(data=bs.all.sum, position=position_dodge(width = 1), aes(x=clim.var, y = mean, shape=Sex), size=3, col="black")
-
-pdf("Size_by_Clim_violin.pdf",height = 12, width = 12)
-vclim
-dev.off()
-
-#-------
-#plot means
-
-# "MeanC1","Mean","dd","dd_early","SpringPre","SpringSnow"
-plot.c2=ggplot(data=bs.all.sum, aes(x=MeanC1, y = mean, group= SexElev, shape=Sex, color=factor(elev) ))+
-  facet_wrap(Species~., scales="free")+
-  geom_point(size=3)+
-  theme_bw()+ geom_smooth(method="lm", se=FALSE)+
-  geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  scale_color_brewer(palette = "Spectral")+ scale_y_continuous(trans='log')
-
-pdf("SizeMean_by_Clim.pdf",height = 12, width = 12)
-plot.c2
-dev.off()  
-
 #-----------------
 #use collection dates
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
@@ -290,17 +212,24 @@ bs.all= bs.all[-which(bs.all$doy_spec==55),]
 
 #estimate anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
-bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec")], list(bs.all$SpecElevSex), FUN=mean)
+bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec")], list(bs.all$SpecElevSex), FUN=mean, na.rm=TRUE)
 names(bs.doy.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.doy.m$SpecElevSex)
 bs.all$doy.anom= bs.all$doy_spec - bs.doy.m$doy_spec[match1]
 
 #plot doy vs size 
-plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
+ggplot(data=bs.all, aes(x=doy_spec, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
   xlab("Day of year of adulthood")+ ylab("Femur length (mm)")+
+  scale_color_viridis_d()
+
+plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., scales="free")+
+  theme(legend.position = "bottom")+
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
   scale_color_viridis_d()
 #group by year?
 
@@ -310,12 +239,12 @@ plot.doy.size
 dev.off()
 
 #analyze
-mod.lmer <- lmer(Femur.anom~doy_spec*Sex*Species + #include time?
+mod.lmer <- lmer(Femur.anom~doy.anom*elev*Sex*Species + #include time?
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.all)
 
-plot_model(mod.lmer, type = "pred", terms = c("doy_spec","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev","Sex","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "slope")
 
 
