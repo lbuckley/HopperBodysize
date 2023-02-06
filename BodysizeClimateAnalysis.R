@@ -3,6 +3,8 @@ library(nlme)
 library(lme4)
 library(lmerTest)
 library(patchwork)
+library(ggplot2)
+library(sjPlot)
 #library(MuMIn)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
@@ -81,6 +83,7 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                  na.action = 'na.omit', data = bs.sub1) #[-which(bs.sub1$Species=="X. corallipes"),]
 
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
 
 #time + climate model
