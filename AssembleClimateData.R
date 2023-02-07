@@ -319,34 +319,40 @@ nc_close(nc.hr)
 #spring means March-May
 #Summer means June-July
 
-clim.m= nc.m.all[nc.m.all$month %in% c(3:5),]
-clim.m= aggregate(clim.m, list(clim.m$year, clim.m$site), FUN=mean)
-names(clim.m)[2]="site"
-clim.m= clim.m[,c("site","year","t2m","tp","sd")]
+nc.m.all$seas= NA
+nc.m.all$seas[nc.m.all$month %in% c(3:5)]<- "spring"
+nc.m.all$seas[nc.m.all$month %in% c(6:7)]<- "summer"
+
+clim.m= aggregate(nc.m.all[,c("t2m","sd","tp")], list(nc.m.all$year, nc.m.all$site, nc.m.all$seas), FUN=mean)
+names(clim.m)[1:3]=c("year","site","seas")
 #convert to C
 clim.m$t2m= clim.m$t2m -273.15
 
-clim.me= nc.me.all[nc.me.all$month %in% c(3:5),]
-clim.me= aggregate(clim.me, list(clim.me$year, clim.me$site), FUN=mean)
-names(clim.me)[2]="site"
-clim.me= clim.me[,c("site","year","t2m","tp","sd","skt")]
+nc.hr.all$seas= NA
+nc.hr.all$seas[nc.hr.all$month %in% c(3:5)]<- "spring"
+nc.hr.all$seas[nc.hr.all$month %in% c(6:7)]<- "summer"
 
-#add 2012, 2013 average
-clim.20125= aggregate(clim.me[clim.me$year %in% 2012:2013,], list(clim.me[clim.me$year %in% 2012:2013,]$site), FUN=mean)
-clim.20125= clim.20125[,-2]
-names(clim.20125)[1]<-"site"
-clim.me= rbind(clim.me, clim.20125)
-
+clim.me= aggregate(nc.hr.all[,c("t2m")], list(nc.hr.all$year, nc.hr.all$site, nc.hr.all$seas), FUN=mean)
+names(clim.me)[1:4]=c("year","site","seas","t2m")
 #convert to C
 clim.me$t2m= clim.me$t2m -273.15
 
+#add 2012, 2013 average
+clim.20125= aggregate(clim.me[clim.me$year %in% 2012:2013,c("t2m")], list(clim.me[clim.me$year %in% 2012:2013,]$site, clim.me[clim.me$year %in% 2012:2013,]$seas), FUN=mean)
+clim.20125= cbind("2012.5",clim.20125)
+names(clim.20125)[1:4]=c("year","site","seas","t2m")
+clim.me= rbind(clim.me, clim.20125)
+
 #estimate climate anomaly
 #or use: https://cds.climate.copernicus.eu/cdsapp#!/dataset/ecv-for-climate-change?tab=overview
-clim.site.me= aggregate(clim.me[clim.me$year %in% 1950:1980,], list(clim.me[clim.me$year %in% 1950:1980,]$site), FUN=mean)
-names(clim.site.me)[1]<- "site"
-match1= match(clim.me$site, clim.site.me$site)
+clim.site.me= aggregate(clim.me[clim.me$year %in% 1950:1980,c("t2m")], list(clim.me[clim.me$year %in% 1950:1980,]$site, clim.me[clim.me$year %in% 1950:1980,]$seas), FUN=mean)
+names(clim.site.me)[1:3]=c("site","seas","t2m")
+
+clim.me$siteseas = paste(clim.me$site, clim.me$seas, sep="")
+clim.site.me$siteseas = paste(clim.site.me$site, clim.site.me$seas, sep="")
+match1= match(clim.me$siteseas, clim.site.me$siteseas)
 clim.me$t2m.anom= clim.me$t2m - clim.site.me$t2m[match1]
-clim.me$sd.anom= clim.me$sd - clim.site.me$sd[match1]
+#clim.me$sd.anom= clim.me$sd - clim.site.me$sd[match1]
 
 #body size anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
@@ -355,20 +361,33 @@ names(bs.size.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.size.m$SpecElevSex)
 bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]
 
+#spread temp data
+clim.me= clim.me[,-which(colnames(clim.me)=="siteseas")]
+clim.me= clim.me[,-which(colnames(clim.me)=="t2m")]
+clim.me <- spread(clim.me, seas, t2m.anom)
+colnames(clim.me)[3:4]<- c("Tspr","Tsum")
+
 #hr data
 #spring degree days
-nc.hr.data$t2m= nc.hr.data$t2m -273.15
-diffs= cbind(nc.hr.data$t2m-12,0)
-nc.hr.data$dd= apply(diffs, 1, FUN = max)
-  
-nc.hr.sum = nc.hr.data %>% group_by(year,site) %>% arrange(doy) %>% mutate(cdd_sum = cumsum(dd/24)) 
+nc.hr.all$t2m= nc.hr.all$t2m -273.15
+diffs= cbind(nc.hr.all$t2m-12,0)
+nc.hr.all$dd= apply(diffs, 1, FUN = max)
+nc.hr.sum = nc.hr.all %>% group_by(year,site) %>% arrange(doy) %>% mutate(cdd_sum = cumsum(dd/24)) 
 #cdd on June 1
 nc.hr.sum= nc.hr.sum[nc.hr.sum$doy==152 & nc.hr.sum$hour==0,]
-nc.hr.sum$siteyear= paste(nc.hr.sum$site, nc.hr.sum$year,sep="")
-clim.m$siteyear= paste(clim.m$site, clim.m$year,sep="")
+#add 2012, 2013 average
+cdd.20125= aggregate(nc.hr.sum[nc.hr.sum$year %in% 2012:2013,c("cdd_sum")], list(nc.hr.sum[nc.hr.sum$year %in% 2012:2013,]$site, nc.hr.sum[nc.hr.sum$year %in% 2012:2013,]$seas), FUN=mean)
+cdd.20125= cbind("2012.5",cdd.20125)
+colnames(cdd.20125)[1:4]=c("year","site","seas","cdd_sum")
+clim.cdd= as.data.frame(nc.hr.sum[,c("year","site","seas","cdd_sum")])
+clim.cdd= rbind(clim.cdd, cdd.20125)
 
-match1= match(clim.m$siteyear, nc.hr.sum$siteyear)
-clim.m$springdd= nc.hr.sum$cdd_sum[match1]
+clim.cdd$siteyear= paste(clim.cdd$site, clim.cdd$year,sep="")
+clim.me$siteyear= paste(clim.me$site, clim.me$year,sep="")
+
+match1= match(clim.me$siteyear, clim.cdd$siteyear)
+clim.me$springdd= nc.hr.sum$cdd_sum[match1]
+##END UPDATES
 
 #add closest CO grid cell 
 diffs= cbind(abs(sites.grid$Longitude+105.59), abs(sites.grid$Longitude+105.34) )
@@ -395,14 +414,12 @@ bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, sep="")
 
 #add extended monthly data
 match1= match(bs.all$SitesYear, clim.me$SitesYear)
-bs.all$t2m= clim.me$t2m[match1]
-bs.all$t2m.anom= clim.me$t2m.anom[match1]
-bs.all$sd= clim.me$sd[match1]
-bs.all$sd.anom= clim.me$sd.anom[match1]
-bs.all$tp= clim.me$tp[match1]
-#bs.all$lai= clim.me$lai[match1]
-bs.all$skt= clim.me$skt[match1]
-#bs.all$st= clim.me$st[match1]
+bs.all$Tspr= clim.me$Tspr[match1]
+bs.all$Tsum= clim.me$Tsum[match1]
+bs.all$springdd= clim.me$springdd[match1]
+
+#bs.all$t2m= clim.me$t2m[match1]
+#bs.all$t2m.anom= clim.me$t2m.anom[match1]
 
 match1= match(bs.all$SitesYear, clim.me$SitesYear)
 bs.nomatch= bs.all[is.na(match1),]

@@ -256,7 +256,7 @@ lmer.sig[lmer.sig < 0.05] <- "*"
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write.csv(lmer.sig, "ModSig.csv")
 
-#generally smaller through time (evolution) but larger with temperature (plasticity)?
+#generally bigger through time (evolution) but larger with temperature (plasticity)?
 #time effects: clavatus, pellucida
 #temp*time*sex: simplex
 

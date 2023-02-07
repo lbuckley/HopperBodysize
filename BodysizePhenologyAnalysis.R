@@ -176,7 +176,7 @@ bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]]
 bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
 bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
 
-#-----------------
+#========================================
 #use collection dates
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
 mus1= read.csv("AlexanderSpecimens2021.csv")
@@ -238,13 +238,85 @@ pdf("SizeDoy_museum.pdf",height = 12, width = 12)
 plot.doy.size
 dev.off()
 
+#-------
 #analyze
-mod.lmer <- lmer(Femur.anom~doy.anom*elev*Sex*Species + #include time?
+bs.scaled <- transform(bs.all,
+                       elev_cs=scale(elev)
+)
+bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+
+mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
                    (1|Year/Sites),
                  REML = FALSE,
-                 na.action = 'na.omit', data = bs.all)
+                 na.action = 'na.omit', data = bs.scaled)
 
-plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Sex"), show.data=TRUE)
 plot_model(mod.lmer, type = "slope")
+anova(mod.lmer)
+
+#-------
+#species individually
+#ANOVA output
+
+stat= c("Sum Sq","NumDF","F value","Pr(>F)")
+
+mod.lmer <- lmer(Femur.anom~doy.anom*elev*Sex + #include time?
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
+
+vars= rownames(anova(mod.lmer))
+
+stats= array(data=NA, dim=c(length(specs),length(vars),4),
+             dimnames=list(specs,vars, stat) ) 
+
+modplots <- vector('list', length(specs))
+slopeplots <- vector('list', length(specs))
+
+for(spec.k in 1:length(specs)){
+  
+  mod.lmer <- lmer(Femur.anom~doy.anom*elev*Sex + #include time?
+                     (1|Year/Sites),
+                   REML = FALSE,
+                   na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
+  
+  stats[spec.k,,1:4]=as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
+  
+  #plot output
+  message(spec.k)
+  modplots[[spec.k]] <- local({
+    spec.k <- spec.k
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("doy.anom","elev"), show.data=TRUE, title=specs[spec.k])
+    print(p1)
+  })
+  
+  slopeplots[[spec.k]] <- local({
+    spec.k <- spec.k
+    p1 <- plot_model(mod.lmer, type="slope", title=specs[spec.k])
+    print(p1)
+  })
+  
+} #end loop specs 
+
+#save figure
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("ModPlots_phenology.pdf",height = 12, width = 12)
+(modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
+dev.off()
+
+pdf("SlopePlots_phenology.pdf",height = 12, width = 12)
+(slopeplots[[1]] | slopeplots[[4]]) / (slopeplots[[2]] | slopeplots[[5]]) / (slopeplots[[3]] | slopeplots[[6]])
+dev.off()
+
+lmer.sig= stats[,,4]
+lmer.sig[lmer.sig < 0.05] <- "*"
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+write.csv(lmer.sig, "ModSig_phenology.csv")
+
+#add gdd anomalies
+
+
 
 
