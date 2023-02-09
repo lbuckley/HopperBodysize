@@ -11,9 +11,13 @@ library(lubridate)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 bs.all= read.csv("BodySize_sub_Sept2022.csv")
+bs.all$Year= as.numeric(as.character(bs.all$Year))
+bs.all$Year[which(bs.all$Year==1048)]<- 1948
+bs.all$Year[which(bs.all$Year==1049)]<- 1949
 bs.all$Year[which(bs.all$Year==1058)]<- 1958
 bs.all$Year[which(bs.all$Year==1059)]<- 1959
 bs.all$Year[which(bs.all$Year==1060)]<- 1960
+
 #----------
 #get site lat, lon
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
@@ -343,17 +347,6 @@ clim.20125= cbind("2012.5",clim.20125)
 names(clim.20125)[1:4]=c("year","site","seas","t2m")
 clim.me= rbind(clim.me, clim.20125)
 
-#estimate climate anomaly
-#or use: https://cds.climate.copernicus.eu/cdsapp#!/dataset/ecv-for-climate-change?tab=overview
-clim.site.me= aggregate(clim.me[clim.me$year %in% 1950:1980,c("t2m")], list(clim.me[clim.me$year %in% 1950:1980,]$site, clim.me[clim.me$year %in% 1950:1980,]$seas), FUN=mean)
-names(clim.site.me)[1:3]=c("site","seas","t2m")
-
-clim.me$siteseas = paste(clim.me$site, clim.me$seas, sep="")
-clim.site.me$siteseas = paste(clim.site.me$site, clim.site.me$seas, sep="")
-match1= match(clim.me$siteseas, clim.site.me$siteseas)
-clim.me$t2m.anom= clim.me$t2m - clim.site.me$t2m[match1]
-#clim.me$sd.anom= clim.me$sd - clim.site.me$sd[match1]
-
 #body size anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
 bs.size.m= aggregate(bs.all[,c("SpecElevSex","Mean_Femur")], list(bs.all$SpecElevSex), FUN=mean)
@@ -372,6 +365,11 @@ colnames(clim.me)[3:4]<- c("Tspr","Tsum")
 nc.hr.all$t2m= nc.hr.all$t2m -273.15
 diffs= cbind(nc.hr.all$t2m-12,0)
 nc.hr.all$dd= apply(diffs, 1, FUN = max)
+nc.hr.all = nc.hr.all %>% arrange(doy) %>% mutate(cdd_sum = cumsum(dd/24)) 
+#write data to add to museum specimens
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+write.csv(nc.hr.all, "climhr.csv")
+
 nc.hr.sum = nc.hr.all %>% group_by(year,site) %>% arrange(doy) %>% mutate(cdd_sum = cumsum(dd/24)) 
 #cdd on June 1
 nc.hr.sum= nc.hr.sum[nc.hr.sum$doy==152 & nc.hr.sum$hour==0,]
@@ -404,6 +402,55 @@ clim.me$SitesYear= paste(clim.me$site, clim.me$year, sep="")
 
 bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, sep="")
 
+#add collection date
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
+mus1= read.csv("AlexanderSpecimens2021.csv")
+
+#match bs to museum code
+mus1$Barcode= mus1$SpecimenCode
+mus1$Barcode= as.numeric(sub("UCMC ", "", mus1$Barcode))
+bs.all$Barcode= as.numeric(bs.all$Barcode)
+
+#match
+match1= match(bs.all$Barcode, mus1$Barcode)
+matched= which(!is.na(match1))
+bs.all$DateCollected[matched]= mus1$DateCollected[na.omit(match1)]
+
+dates= as.data.frame(str_split(bs.all$DateCollected, "/", simplify = TRUE))
+colnames(dates)= c("month","day","year")
+dates$month= as.numeric(dates$month)
+dates$day= as.numeric(dates$day)
+dates$year= as.numeric(dates$year)
+dates$year[which(dates$year>20)]<- dates$year[which(dates$year>20)]+1900
+dates$year[which(dates$year<20)]<- dates$year[which(dates$year<20)]+2000
+bs.all$month= dates$month
+bs.all$day= dates$day
+bs.all$year= dates$year
+bs.all$timeperiod="current"
+bs.all$timeperiod[bs.all$Year<1990]="historic"
+
+tmp <- as.Date(paste(bs.all$day, bs.all$month, bs.all$year, sep="/"), format = "%d/%m/%Y")
+bs.all$doy_spec= as.numeric(format(tmp, "%j"))
+
+#dd collection
+nc.hr.all$yeardoy= paste(nc.hr.all$year,nc.hr.all$doy, sep="")
+bs.all$yeardoy= paste(bs.all$year,bs.all$doy_spec, sep="")
+
+match1= match(bs.all$yeardoy, nc.hr.all$yeardoy)
+matched= which(!is.na(match1))
+bs.all$dd_collect[matched]= nc.hr.all$cdd_sum[na.omit(match1)]
+
+#estimate climate anomaly
+#or use: https://cds.climate.copernicus.eu/cdsapp#!/dataset/ecv-for-climate-change?tab=overview
+clim.site.me= aggregate(clim.me[clim.me$year %in% 1950:1980,c("Tspr","Tsum","springdd")], list(clim.me[clim.me$year %in% 1950:1980,]$site), FUN=mean)
+names(clim.site.me)[1]=c("site")
+
+match1= match(clim.me$site, clim.site.me$site)
+clim.me$Tspr= clim.me$Tspr - clim.site.me$Tspr[match1]
+clim.me$Tsum= clim.me$Tsum - clim.site.me$Tsum[match1]
+clim.me$springdd= clim.me$springdd - clim.site.me$springdd[match1]
+
+#-----
 # #add initial monthly data
 # match1= match(bs.all$SitesYear, clim.m$SitesYear)
 # bs.all$t2m= clim.m$t2m[match1]

@@ -116,13 +116,6 @@ plot.doy.diff + plot.gdd.diff
 dev.off()
 
 #----------------------------
-#Use date to assess temp, size relationship for all specimens
-bs.all$Year= as.numeric(as.character(bs.all$Year))
-bs.all$Year[which(bs.all$Year==1048)]<- 1948
-bs.all$Year[which(bs.all$Year==1049)]<- 1949
-bs.all$Year[which(bs.all$Year==1058)]<- 1958
-bs.all$Year[which(bs.all$Year==1059)]<- 1959
-bs.all$Year[which(bs.all$Year==1060)]<- 1960
 
 # #analysis with C1 data
 # fdir= "/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/"
@@ -176,54 +169,16 @@ bs.all$Year[which(bs.all$Year==1060)]<- 1960
 # bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
 
 #========================================
-#use collection dates
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
-mus1= read.csv("AlexanderSpecimens2021.csv")
-
-#match bs to museum code
-mus1$Barcode= mus1$SpecimenCode
-mus1$Barcode= as.numeric(sub("UCMC ", "", mus1$Barcode))
-bs.all$Barcode= as.numeric(bs.all$Barcode)
-
-#match
-match1= match(bs.all$Barcode, mus1$Barcode)
-matched= which(!is.na(match1))
-bs.all$DateCollected[matched]= mus1$DateCollected[na.omit(match1)]
-
-dates= as.data.frame(str_split(bs.all$DateCollected, "/", simplify = TRUE))
-names(dates)= c("month","day","year")
-dates$month= as.numeric(dates$month)
-dates$day= as.numeric(dates$day)
-dates$year= as.numeric(dates$year)
-dates$year[which(dates$year>20)]<- dates$year[which(dates$year>20)]+1900
-dates$year[which(dates$year<20)]<- dates$year[which(dates$year<20)]+2000
-bs.all$month= dates$month
-bs.all$day= dates$day
-bs.all$year= dates$year
-bs.all$timeperiod="current"
-bs.all$timeperiod[bs.all$Year<1990]="historic"
-
-tmp <- as.Date(paste(bs.all$day, bs.all$month, bs.all$year, sep="/"), format = "%d/%m/%Y")
-bs.all$doy_spec= as.numeric(format(tmp, "%j"))
-
-#drop low value for C. pellucida
-#bs.all= bs.all[-which(bs.all$doy_spec==55),]
 
 #estimate anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
-bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec")], list(bs.all$SpecElevSex), FUN=mean, na.rm=TRUE)
+bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec","springdd","Tspr","Tsum","dd_collect")], list(bs.all$SpecElevSex), FUN=mean, na.rm=TRUE)
 names(bs.doy.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.doy.m$SpecElevSex)
 bs.all$doy.anom= bs.all$doy_spec - bs.doy.m$doy_spec[match1]
+bs.all$dd.anom= bs.all$dd_collect - bs.doy.m$dd_collect[match1]
 
 #plot doy vs size 
-ggplot(data=bs.all, aes(x=doy_spec, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
-  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  facet_wrap(Species~., scales="free")+
-  theme(legend.position = "bottom")+
-  xlab("Day of year of adulthood")+ ylab("Femur length (mm)")+
-  scale_color_viridis_d()
-
 plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
@@ -231,6 +186,13 @@ plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(el
   xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
   scale_color_viridis_d()
 #group by year?
+
+plot.gdd.size= ggplot(data=bs.all, aes(x=dd.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., scales="free")+
+  theme(legend.position = "bottom")+
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
+  scale_color_viridis_d()
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("SizeDoy_museum.pdf",height = 12, width = 12)
@@ -251,6 +213,13 @@ mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
 
 plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Sex","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Sex"), show.data=TRUE)
+
+mod.lmer <- lmer(Femur.anom~dd.anom*elev_cs*Sex*Species + #include time?
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled)
+
+plot_model(mod.lmer, type = "pred", terms = c("dd.anom","elev_cs","Sex","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "slope")
 anova(mod.lmer)
 
