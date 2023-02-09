@@ -387,7 +387,6 @@ clim.me$siteyear= paste(clim.me$site, clim.me$year,sep="")
 
 match1= match(clim.me$siteyear, clim.cdd$siteyear)
 clim.me$springdd= nc.hr.sum$cdd_sum[match1]
-##END UPDATES
 
 #add closest CO grid cell 
 diffs= cbind(abs(sites.grid$Longitude+105.59), abs(sites.grid$Longitude+105.34) )

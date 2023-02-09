@@ -124,57 +124,56 @@ bs.all$Year[which(bs.all$Year==1058)]<- 1958
 bs.all$Year[which(bs.all$Year==1059)]<- 1959
 bs.all$Year[which(bs.all$Year==1060)]<- 1960
 
-#gdds and temps of season
-
-fdir= "/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/"
-
-#load climate data
-setwd( paste(fdir, "climate", sep="") )   
-clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
-sort(unique(clim$Year))
-# add years: 1931, 1941, 1947, 1948, 1949, 1950, 2022
-clim.all= read.csv("AlexanderClimateAll.csv")
-sort(unique(clim.all$Year))
-inds= which(clim.all$Year %in% c(1961, 1962, 1963, 1964, 1979, 1981) )
-clim.add= clim.all[inds,]
-clim.add$sjy= paste(clim.add$Site, clim.add$Julian, clim.add$Year, sep="_")
-
-clim.bind= clim[1:nrow(clim.add),]
-clim.bind[]=NA
-clim.bind[,c("Site","Julian","Year","Max","Min","Mean","sjy")]= clim.add[,c("Site","Julian","Year","Max","Min","Mean","sjy")]
-clim.all= rbind(clim, clim.bind)
-
-#cummulative degree days
-#cumsum within groups
-clim.sum = clim.all %>% group_by(Year,Site) %>% arrange(Julian) %>% mutate(cdd_sum = cumsum(dd_sum),cdd_june = cumsum(dd_june),cdd_july = cumsum(dd_july),cdd_aug = cumsum(dd_aug),cdd_early = cumsum(dd_early),cdd_mid = cumsum(dd_mid),cdd_ac = cumsum(dd_ac),cdd_mb = cumsum(dd_mb),cdd_ms = cumsum(dd_ms) ) 
-
-#rough spring (May + June) averages
-clim.ave= clim.all[which(clim.all$Julian %in% 121:181),]
-clim.ave= aggregate(clim.ave[,c("Julian","Max","Mean")], list(clim.ave$Site, clim.ave$Year), FUN="mean", na.rm=TRUE)
-names(clim.ave)[1:2]=c("Site","Year")
-#use C1
-clim.ave= clim.ave[which(clim.ave$Site=="C1"),]
-
-#add clim C1 to bs.all
-match1= match(bs.all$Year, clim.ave$Year)
-matched= which(!is.na(match1))
-
-bs.all$MeanC1[matched]= clim.ave$Mean[match1[matched]] 
+# #analysis with C1 data
+# fdir= "/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/"
+# 
+# #load climate data
+# setwd( paste(fdir, "climate", sep="") )   
+# clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
+# sort(unique(clim$Year))
+# # add years: 1931, 1941, 1947, 1948, 1949, 1950, 2022
+# clim.all= read.csv("AlexanderClimateAll.csv")
+# sort(unique(clim.all$Year))
+# inds= which(clim.all$Year %in% c(1961, 1962, 1963, 1964, 1979, 1981) )
+# clim.add= clim.all[inds,]
+# clim.add$sjy= paste(clim.add$Site, clim.add$Julian, clim.add$Year, sep="_")
+# 
+# clim.bind= clim[1:nrow(clim.add),]
+# clim.bind[]=NA
+# clim.bind[,c("Site","Julian","Year","Max","Min","Mean","sjy")]= clim.add[,c("Site","Julian","Year","Max","Min","Mean","sjy")]
+# clim.all= rbind(clim, clim.bind)
+# 
+# #cummulative degree days
+# #cumsum within groups
+# clim.sum = clim.all %>% group_by(Year,Site) %>% arrange(Julian) %>% mutate(cdd_sum = cumsum(dd_sum),cdd_june = cumsum(dd_june),cdd_july = cumsum(dd_july),cdd_aug = cumsum(dd_aug),cdd_early = cumsum(dd_early),cdd_mid = cumsum(dd_mid),cdd_ac = cumsum(dd_ac),cdd_mb = cumsum(dd_mb),cdd_ms = cumsum(dd_ms) ) 
+# 
+# #rough spring (May + June) averages
+# clim.ave= clim.all[which(clim.all$Julian %in% 121:181),]
+# clim.ave= aggregate(clim.ave[,c("Julian","Max","Mean")], list(clim.ave$Site, clim.ave$Year), FUN="mean", na.rm=TRUE)
+# names(clim.ave)[1:2]=c("Site","Year")
+# #use C1
+# clim.ave= clim.ave[which(clim.ave$Site=="C1"),]
+# 
+# #add clim C1 to bs.all
+# match1= match(bs.all$Year, clim.ave$Year)
+# matched= which(!is.na(match1))
+# 
+# bs.all$MeanC1[matched]= clim.ave$Mean[match1[matched]] 
 
 #------------------------
-#load yearly data
-setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
-clim.yr= read.csv("AlexanderYearlyClimate.csv")
-
-#match climate data
-match1= match(bs.all$year, clim.yr$year)
-matched= which(!is.na(match1))
-
-bs.all$MeanClim[matched]= clim.yr$Mean[match1[matched]] 
-bs.all$dd[matched]= clim.yr$dd[match1[matched]] 
-bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]] 
-bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
-bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
+# #load yearly data
+# setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
+# clim.yr= read.csv("AlexanderYearlyClimate.csv")
+# 
+# #match climate data
+# match1= match(bs.all$year, clim.yr$year)
+# matched= which(!is.na(match1))
+# 
+# bs.all$MeanClim[matched]= clim.yr$Mean[match1[matched]] 
+# bs.all$dd[matched]= clim.yr$dd[match1[matched]] 
+# bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]] 
+# bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
+# bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
 
 #========================================
 #use collection dates
@@ -208,7 +207,7 @@ tmp <- as.Date(paste(bs.all$day, bs.all$month, bs.all$year, sep="/"), format = "
 bs.all$doy_spec= as.numeric(format(tmp, "%j"))
 
 #drop low value for C. pellucida
-bs.all= bs.all[-which(bs.all$doy_spec==55),]
+#bs.all= bs.all[-which(bs.all$doy_spec==55),]
 
 #estimate anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
