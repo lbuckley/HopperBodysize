@@ -355,9 +355,7 @@ match1= match(bs.all$SpecElevSex, bs.size.m$SpecElevSex)
 bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]
 
 #spread temp data
-clim.me= clim.me[,-which(colnames(clim.me)=="siteseas")]
-clim.me= clim.me[,-which(colnames(clim.me)=="t2m")]
-clim.me <- spread(clim.me, seas, t2m.anom)
+clim.me <- spread(clim.me, seas, t2m)
 colnames(clim.me)[3:4]<- c("Tspr","Tsum")
 
 #hr data
@@ -446,9 +444,9 @@ clim.site.me= aggregate(clim.me[clim.me$year %in% 1950:1980,c("Tspr","Tsum","spr
 names(clim.site.me)[1]=c("site")
 
 match1= match(clim.me$site, clim.site.me$site)
-clim.me$Tspr= clim.me$Tspr - clim.site.me$Tspr[match1]
-clim.me$Tsum= clim.me$Tsum - clim.site.me$Tsum[match1]
-clim.me$springdd= clim.me$springdd - clim.site.me$springdd[match1]
+clim.me$Tspr.anom= clim.me$Tspr - clim.site.me$Tspr[match1]
+clim.me$Tsum.anom= clim.me$Tsum - clim.site.me$Tsum[match1]
+clim.me$springdd.anom= clim.me$springdd - clim.site.me$springdd[match1]
 
 #-----
 # #add initial monthly data
@@ -463,6 +461,9 @@ match1= match(bs.all$SitesYear, clim.me$SitesYear)
 bs.all$Tspr= clim.me$Tspr[match1]
 bs.all$Tsum= clim.me$Tsum[match1]
 bs.all$springdd= clim.me$springdd[match1]
+bs.all$Tspr.anom= clim.me$Tspr.anom[match1]
+bs.all$Tsum.anom= clim.me$Tsum.anom[match1]
+bs.all$springdd.anom= clim.me$springdd.anom[match1]
 
 #bs.all$t2m= clim.me$t2m[match1]
 #bs.all$t2m.anom= clim.me$t2m.anom[match1]
