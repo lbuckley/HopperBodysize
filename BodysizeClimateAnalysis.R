@@ -112,6 +112,7 @@ plot_model(mod.lmer, type = "slope")
 plot_model(mod.lmer, type = "resid")
 plot_model(mod.lmer, type = "diag")
 
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","time"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time", "Species"), show.data=TRUE)
 
@@ -123,6 +124,7 @@ dev.off()
 #============================
 #By species time
 
+specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex +
