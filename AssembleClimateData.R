@@ -315,6 +315,10 @@ if(k>1){
 nc_close(nc.m)
 nc_close(nc.hr)
 
+#write out climate data
+saveRDS(nc.hr.all, "nchr.RDS") 
+saveRDS(nc.hr.all, "nchr.RDS") 
+
 #------------------------
 #add climate data to bodysize dataset
 

@@ -1,3 +1,7 @@
+# analyze custom windows: 1 month before mean phenology
+# try climwin analysis
+
+
 # TRY CLIMWIN ANALYSIS
 
 library(car)
@@ -10,6 +14,7 @@ library(sjPlot)
 library(plyr)
 #library(MuMIn)
 library(climwin)
+library(zoo)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim.csv")
@@ -35,8 +40,22 @@ bs.all.sum$time[which(as.numeric(bs.all.sum$Year)>2000)]<-"current"
 bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="") 
 bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 
+#----
+#load climate
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData")
+nc.hr.all <- readRDS("nchr.RDS")
 
+nchr.month <- nc.hr.all %>%
+  dplyr::arrange(doy) %>% 
+  dplyr::group_by(site) %>% 
+  dplyr::mutate(t_28d = zoo::rollmean(t2m, k = 28, fill = NA) )
 
+#add temp 4 weeks before specimen date
+bs.all$SitesYearDoy= paste(bs.all$SitesYear, bs.all$doy_spec, sep="")
+nchr.month$SitesYearDoy= paste(nchr.month$site, nchr.month$year, bs.all$doy_spec, sep="")
+
+match1= match(bs.all$SitesYearDoy, nchr.month$SitesYearDoy) 
+bs.all$species= dat[match1, "species"] 
 
 
 
