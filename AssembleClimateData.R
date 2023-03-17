@@ -8,6 +8,7 @@ library(sf)
 library(ncdf4)
 library(tidyverse)
 library(lubridate)
+library(zoo)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 bs.all= read.csv("BodySize_sub_Sept2022.csv")
@@ -329,7 +330,7 @@ saveRDS(nc.hr.all, "nchr.RDS")
 
 nc.m.all$seas= NA
 nc.m.all$seas[nc.m.all$month %in% c(3:5)]<- "spring"
-nc.m.all$seas[nc.m.all$month %in% c(6:7)]<- "summer"
+nc.m.all$seas[nc.m.all$month %in% c(7:8)]<- "summer"
 
 clim.m= aggregate(nc.m.all[,c("t2m","sd","tp")], list(nc.m.all$year, nc.m.all$site, nc.m.all$seas), FUN=mean)
 names(clim.m)[1:3]=c("year","site","seas")
@@ -338,7 +339,7 @@ clim.m$t2m= clim.m$t2m -273.15
 
 nc.hr.all$seas= NA
 nc.hr.all$seas[nc.hr.all$month %in% c(3:5)]<- "spring"
-nc.hr.all$seas[nc.hr.all$month %in% c(6:7)]<- "summer"
+nc.hr.all$seas[nc.hr.all$month %in% c(7:8)]<- "summer"
 
 clim.me= aggregate(nc.hr.all[,c("t2m")], list(nc.hr.all$year, nc.hr.all$site, nc.hr.all$seas), FUN=mean)
 names(clim.me)[1:4]=c("year","site","seas","t2m")
@@ -453,6 +454,7 @@ clim.me$Tsum.anom= clim.me$Tsum - clim.site.me$Tsum[match1]
 clim.me$springdd.anom= clim.me$springdd - clim.site.me$springdd[match1]
 
 #-----
+#Add climate data given time before collection date
 # #add initial monthly data
 # match1= match(bs.all$SitesYear, clim.m$SitesYear)
 # bs.all$t2m= clim.m$t2m[match1]
@@ -469,12 +471,44 @@ bs.all$Tspr.anom= clim.me$Tspr.anom[match1]
 bs.all$Tsum.anom= clim.me$Tsum.anom[match1]
 bs.all$springdd.anom= clim.me$springdd.anom[match1]
 
+#add previous year summer (relevant for nymphal diapausers)
+clim.me$year_Plus1= as.numeric(clim.me$year) +1
+clim.me$SitesYear_Plus1= paste(clim.me$site,clim.me$year_Plus1, sep="")
+
+match1= match(bs.all$SitesYear, clim.me$SitesYear_Plus1)
+bs.all$Tsum.prev= clim.me$Tsum[match1]
+bs.all$Tsum.anom.prev= clim.me$Tsum.anom[match1]
+
+#add temp 4 weeks before specimen date
+nchr.month <- nc.hr.all %>%
+  dplyr::arrange(doy) %>% 
+  dplyr::group_by(site) %>% 
+  dplyr::mutate(t_28d = zoo::rollmean(t2m, k = 28, fill = NA),  t_28d.anom = zoo::rollmean(t2m, k = 28, fill = NA))
+nchr.month= as.data.frame(nchr.month)
+
+#add temp 4 weeks before specimen date
+bs.all$SitesYearDoy= paste(bs.all$SitesYear, bs.all$doy_spec, sep="")
+nchr.month$SitesYearDoy= paste(nchr.month$site, nchr.month$year, bs.all$doy_spec, sep="")
+
+match1= match(bs.all$SitesYearDoy, nchr.month$SitesYearDoy) 
+bs.all$t_28d= nchr.month[match1, "t_28d"]
+
 #bs.all$t2m= clim.me$t2m[match1]
 #bs.all$t2m.anom= clim.me$t2m.anom[match1]
 
 match1= match(bs.all$SitesYear, clim.me$SitesYear)
 bs.nomatch= bs.all[is.na(match1),]
 
+#make into anomally
+clim.sum= ddply(bs.all, c("Species", "elev"), summarise,
+                  t_28d.anom = mean(t_28d, na.rm=TRUE) )
+clim.sum$SpElev= paste(clim.sum$Species, clim.sum$elev, sep="")
+bs.all$SpElev= paste(bs.all$Species, bs.all$elev, sep="")
+
+match1= match(bs.all$SpElev, clim.sum$SpElev)
+bs.all$t28.anom= bs.all$t_28d - clim.sum$t_28d.anom[match1]
+
+#--------
 #save data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 write.csv(bs.all, "BodySize_wClim.csv" )

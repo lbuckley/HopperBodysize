@@ -55,7 +55,7 @@ dev.off()
 #analysis
 
 #combined model
-bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites","Tspr","Tspr.anom","Tsum","Tsum.anom","springdd","springdd.anom")] #,"springdd"
+bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites","Tspr","Tspr.anom","Tsum","Tsum.anom","springdd","springdd.anom","t_28d","t28.anom","Tsum.prev","Tsum.anom.prev")] #,"springdd"
 bs.sub1= na.omit(bs.sub1)
 #check drops
 
@@ -64,7 +64,11 @@ bs.scaled <- transform(bs.sub1,
                        elev_cs=scale(elev),
                        Tspr.anom_cs=scale(Tspr.anom),
                        Tsum.anom_cs=scale(Tsum.anom),
-                       springdd.anom_cs=scale(springdd.anom)
+                       springdd.anom_cs=scale(springdd.anom),
+                       t28d_cs= scale(t_28d),
+                       t28.anom_cs= scale(t28.anom),
+                       Tsum.prev_cs=scale(Tsum.prev),
+                       Tsum.anom.prev_cs=scale(Tsum.anom.prev)
 )
 
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
@@ -83,21 +87,24 @@ plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
 
 #time + climate model
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs*time*Sex*Species +
+#bs.scaled$env.var= bs.scaled$Tspr.anom_cs
+bs.scaled$env.var= bs.scaled$t28.anom_cs
+
+mod.lmer <- lmer(Femur.anom~env.var*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
 
-#limited model with sex
-mod.lmer <- lmer(Femur.anom~Tspr.anom+time +
-                   time:elev_cs +time:Sex +time:elev_cs:Sex+ 
-                   Tspr.anom:elev_cs +Tspr.anom:Sex +Tspr.anom:elev_cs:Sex+
-                   Tspr.anom:Species+time:Species +
-                   time:elev_cs:Species +time:Sex:Species +time:elev_cs:Sex:Species+ 
-                   Tspr.anom:elev_cs:Species +Tspr.anom:Sex:Species +Tspr.anom:elev_cs:Sex:Species+
-                   (1|Year/Sites),
-                 REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled)  #drop [-which(bs.scaled$Species=="X. corallipes"),]?
+# #limited model with sex
+# mod.lmer <- lmer(Femur.anom~env.var+time +
+#                    time:elev_cs +time:Sex +time:elev_cs:Sex+ 
+#                    env.var:elev_cs +env.var:Sex +env.var:elev_cs:Sex+
+#                    env.var:Species+time:Species +
+#                    time:elev_cs:Species +time:Sex:Species +time:elev_cs:Sex:Species+ 
+#                    env.var:elev_cs:Species +env.var:Sex:Species +env.var:elev_cs:Sex:Species+
+#                    (1|Year/Sites),
+#                  REML = FALSE, na.action = 'na.fail', 
+#                  data = bs.scaled)  #drop [-which(bs.scaled$Species=="X. corallipes"),]?
 
 #split by Sex?
 #size in a year: determined by time period (vary by elevation, Sex, species), climate, 
@@ -112,9 +119,10 @@ plot_model(mod.lmer, type = "slope")
 plot_model(mod.lmer, type = "resid")
 plot_model(mod.lmer, type = "diag")
 
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","time"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time", "Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("env.var","time"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("env.var","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("env.var","elev_cs","time"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("env.var","elev_cs","time", "Species"), show.data=TRUE)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
@@ -130,7 +138,7 @@ stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
-                 data = bs.sub1[which(bs.sub1$Species==specs[spec.k]),]) 
+                 data = bs.sub1) 
 
 vars= rownames(anova(mod.lmer))
 
@@ -183,10 +191,15 @@ write.csv(lmer.sig, "ModSig_time.csv")
 
 #-------
 #By Species time + climate model
+
+bs.scaled$env.var= bs.scaled$t28.anom_cs
+# bs.scaled$env.var= bs.scaled$Tsum.anom.prev_cs
+# bs.scaled$env.var= bs.scaled$Tspr.anom_cs
+
 #ANOVA output
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs+Sex+time +(1|Year/Sites),
+mod.lmer <- lmer(Femur.anom~env.var*elev_cs+Sex+time +(1|Year/Sites),
                    REML = FALSE,
                    na.action = 'na.omit',
                    data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
@@ -201,21 +214,21 @@ slopeplots <- vector('list', length(specs))
 
 for(spec.k in 1:length(specs)){
   
-  #mod.lmer <- lmer(Mean_Femur~Tspr.anom_cs*sd.anom*elev_cs*time*Sex + (1|Year/Sites), #(1|Year/Sites)
+  #mod.lmer <- lmer(Mean_Femur~env.var_cs*sd.anom*elev_cs*time*Sex + (1|Year/Sites), #(1|Year/Sites)
   #                 REML = FALSE,
   #                 na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
-  # mod.lmer <- lmer(Femur.anom~Tspr.anom+time +
+  # mod.lmer <- lmer(Femur.anom~env.var+time +
   #                    time:elev_cs +time:Sex +time:elev_cs:Sex+ 
-  #                    Tspr.anom:elev_cs +Tspr.anom:Sex +Tspr.anom:elev_cs:Sex+
+  #                    env.var:elev_cs +env.var:Sex +env.var:elev_cs:Sex+
   #                    (1|Year/Sites),
   #                  REML = FALSE, na.action = 'na.fail', 
   #                  data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),]) 
-  # mod.lmer.f <- lmer(Mean_Femur~Tspr.anom_cs*elev_cs*time +(1|Year/Sites),
+  # mod.lmer.f <- lmer(Mean_Femur~env.var_cs*elev_cs*time +(1|Year/Sites),
   #                                  REML = FALSE,
   #                                  na.action = 'na.omit',
   #                    data = bs.scaled[which(bs.scaled$Species==specs[spec.k] & bs.scaled$Sex=="F"),])
 
-  mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs+Sex+time +(1|Year/Sites),
+  mod.lmer <- lmer(Femur.anom~env.var*elev_cs+Sex+time +(1|Year/Sites),
                      REML = FALSE,
                      na.action = 'na.omit',
                      data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
@@ -226,7 +239,7 @@ for(spec.k in 1:length(specs)){
   message(spec.k)
   modplots[[spec.k]] <- local({
     spec.k <- spec.k
-    p1 <- plot_model(mod.lmer, type="pred",terms=c("Tspr.anom_cs","elev_cs"), show.data=TRUE, title=specs[spec.k])
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("env.var","elev_cs"), show.data=TRUE, title=specs[spec.k])
     print(p1)
   })
   
@@ -258,5 +271,17 @@ write.csv(lmer.sig, "ModSig.csv")
 #time effects: clavatus, pellucida
 #temp*time*sex: simplex
 
+#-------
+#Model selection across climate variables
+#https://doi.org/10.1002/ecy.3336
+#try LASSO?
 
+spec.k=6
 
+#bs.scaled$envvar= bs.scaled$Tspr.anom_cs
+#bs.scaled$envvar= bs.scaled$Tsum.anom.prev_cs
+bs.scaled$envvar= bs.scaled$t28.anom_cs
+
+ggplot(data=bs.scaled[which(bs.scaled$Species==specs[spec.k]),], 
+       aes(x=envvar, y = Femur.anom, color=elev)) +
+         geom_point()+geom_smooth(method="lm")
