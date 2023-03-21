@@ -139,6 +139,7 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs+Sex +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.sub1) 
+#species:year to allow species to have specific year effects; +(1|species:year), REML=TRUE; r.squaredGLMM(mod1)
 
 vars= rownames(anova(mod.lmer))
 coef.names= names(fixef(mod.lmer))
@@ -294,7 +295,7 @@ pdf("ModPlots_clim.pdf",height = 12, width = 12)
 (modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
 dev.off()
 
-pdf("SlopePlots_clim.pdf",height = 10, width = 12)
+pdf("SlopePlots_clim.pdf",height = 25, width = 6)
   (slopeplots[[1]] | slopeplots.env[[1]])/
   (slopeplots[[2]] | slopeplots.env[[2]])/
   (slopeplots[[3]] | slopeplots.env[[3]])/
@@ -305,11 +306,35 @@ dev.off()
 #fix layout
 
 #write stats
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+
+#ANOVA output
+anova.time= cbind(coefs[,1],stats[,1,3:4], coefs[,2],stats[,2,3:4], coefs[,3],stats[,3,3:4], coefs[,4],stats[,4,3:4])
+anova.time= round(anova.time,2)
+anova.time[which(anova.time[,3] < 0.05),3] <- "*"
+anova.time[which(anova.time[,6] < 0.05),6] <- "*"
+anova.time[which(anova.time[,9] < 0.05),9] <- "*"
+anova.time[which(anova.time[,12] < 0.05),12] <- "*"
+colnames(anova.time)[c(1,4,7,10)]=colnames(coefs)
+write.csv(anova.time, "Anova_time.csv")
+
+anova.tspr= cbind(coefs.env[,1,1],stats.env[,1,1,3:4], coefs.env[,1,2],stats.env[,1,2,3:4],
+                  coefs.env[,1,3],stats.env[,1,3,3:4], coefs.env[,1,4],stats.env[,1,4,3:4],
+                  coefs.env[,1,5],stats.env[,1,5,3:4], coefs.env[,1,6],stats.env[,1,6,3:4])
+anova.tspr= round(anova.tspr,2)
+anova.tspr[which(anova.tspr[,3] < 0.05),3] <- "*"
+anova.tspr[which(anova.tspr[,6] < 0.05),6] <- "*"
+anova.tspr[which(anova.tspr[,9] < 0.05),9] <- "*"
+anova.tspr[which(anova.tspr[,12] < 0.05),12] <- "*"
+anova.tspr[which(anova.tspr[,15] < 0.05),15] <- "*"
+anova.tspr[which(anova.tspr[,18] < 0.05),18] <- "*"
+colnames(anova.tspr)[c(1,4,7,10,13,16)]=dimnames(coefs.env)[[3]]
+write.csv(anova.tspr, "Anova_Tspr.csv")
+
+#significance
 lmer.sig= cbind(stats[,,4], stats.env[,1,,4], stats.env[,2,,4], stats.env[,3,,4] )
 lmer.sig= round(lmer.sig,3)
 lmer.sig[lmer.sig < 0.05] <- "*"
-
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write.csv(lmer.sig, "ModSig.csv")
 
 #write coeficients
