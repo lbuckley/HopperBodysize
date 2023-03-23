@@ -11,6 +11,42 @@ library(plyr)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim.csv")
 
+#violin plot for anomaly
+bs.all$SexTime= paste(bs.all$Sex, bs.all$time, sep="")
+bs.all$group= paste(bs.all$Species, bs.all$elev, bs.all$Sex, bs.all$time, sep="")
+dodge <- position_dodge(width = 100)
+jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
+
+bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+
+vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=time, fill=time)) +
+  facet_wrap(Species~., scales="free")+
+  geom_point(position=jdodge, aes(shape=Sex))+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
+  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
+  geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
+  theme_modern()+
+  scale_fill_manual(values= c("darkorange","cadetblue"))+
+  scale_color_manual(values= c("darkorange","cadetblue"))+
+  scale_shape_manual(values=c(21,24,25))+
+  xlab("Elevation (m)")+
+  ylab("Femur length (mm)")
+
+#add mean and se
+bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
+              N    = length(Femur.anom),
+              mean = mean(Femur.anom),
+              sd   = sd(Femur.anom) )
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$mean)
+
+vplot= vplot + 
+ geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
+
+pdf("Size_by_ElevTime_violin_anomally.pdf",height = 12, width = 12)
+vplot
+dev.off()
+
+#----------
 #add mean and se
 bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summarise,
                   N    = length(Mean_Femur),
@@ -80,15 +116,15 @@ bs.sub1$Species= factor(bs.sub1$Species, order=TRUE, levels=c("E. simplex","X. c
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE,
-                 na.action = 'na.omit', data = bs.sub1) #[-which(bs.sub1$Species=="X. corallipes"),]
+                 na.action = 'na.omit', data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
 
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time","Sex", "Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Sex"), show.data=TRUE)
 
 #time + climate model
-#bs.scaled$env.var= bs.scaled$Tspr.anom_cs
-bs.scaled$env.var= bs.scaled$t28.anom_cs
+bs.scaled$env.var= bs.scaled$Tspr.anom_cs
+#bs.scaled$env.var= bs.scaled$t28.anom_cs
 
 mod.lmer <- lmer(Femur.anom~env.var*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
@@ -123,10 +159,11 @@ plot_model(mod.lmer, type = "pred", terms = c("env.var","time"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("env.var","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("env.var","elev_cs","time"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("env.var","elev_cs","time", "Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("env.var","time", "Sex", "Species"), show.data=TRUE)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs", "elev_cs","Species","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("env.var", "elev_cs","Species","Sex"), show.data=TRUE)
 dev.off()
 
 #============================
@@ -139,7 +176,6 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs+Sex +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.sub1) 
-#species:year to allow species to have specific year effects; +(1|species:year), REML=TRUE; r.squaredGLMM(mod1)
 
 vars= rownames(anova(mod.lmer))
 coef.names= names(fixef(mod.lmer))
