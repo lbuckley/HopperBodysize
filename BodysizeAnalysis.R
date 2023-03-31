@@ -240,7 +240,7 @@ bs.sum= ddply(bs.sub, c("Species", "elev", "Sex","time","SexTime"), summarise,
               N    = length(Mean_Femur),
               mean = mean(Mean_Femur),
               sd   = sd(Mean_Femur) )
-bs.sum$se= bs.sum$sd / sqrt(bs.sum$mean)
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 
 vplot= vplot + 
   geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
@@ -283,7 +283,7 @@ bs.sum= ddply(bs.unmatched, c("Species", "elev", "Sex","time","SexTime"), summar
               N    = length(Mean_Femur),
               mean = mean(Mean_Femur),
               sd   = sd(Mean_Femur) )
-bs.sum$se= bs.sum$sd / sqrt(bs.sum$mean)
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 
 vplot= vplot + 
   geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+

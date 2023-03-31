@@ -30,18 +30,20 @@ vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=tim
   scale_color_manual(values= c("darkorange","cadetblue"))+
   scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
-  ylab("Femur length (mm)")
+  ylab("Femur length anomally (mm)")
 
 #add mean and se
 bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
               N    = length(Femur.anom),
               mean = mean(Femur.anom),
               sd   = sd(Femur.anom) )
-bs.sum$se= bs.sum$sd / sqrt(bs.sum$mean)
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 
 vplot= vplot + 
+ geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
  geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
 
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("Size_by_ElevTime_violin_anomally.pdf",height = 12, width = 12)
 vplot
 dev.off()
@@ -109,6 +111,9 @@ bs.scaled <- transform(bs.sub1,
 
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
+#make elevation ordered factor
+bs.scaled$elev_cs= factor(bs.scaled$elev_cs, ordered=TRUE )
+
 #time model
 bs.sub1$elev_cs= scale(bs.sub1$elev)
 bs.sub1$Species= factor(bs.sub1$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
@@ -118,11 +123,17 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
 
+#drop elevation
+mod.lmer <- lmer(Femur.anom~time*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
+
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time","Sex", "Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Sex"), show.data=TRUE)
 
-#time + climate model
+#time + climate model 
 bs.scaled$env.var= bs.scaled$Tspr.anom_cs
 #bs.scaled$env.var= bs.scaled$t28.anom_cs
 
@@ -130,6 +141,14 @@ mod.lmer <- lmer(Femur.anom~env.var*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
+
+#drop elevation
+mod.lmer <- lmer(Femur.anom~env.var*time*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
+
+AIC(mod.lmer)
 
 # #limited model with sex
 # mod.lmer <- lmer(Femur.anom~env.var+time +
