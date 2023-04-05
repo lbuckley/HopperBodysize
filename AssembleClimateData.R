@@ -571,9 +571,38 @@ setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
 clim1= read.csv("Clim1Data.csv")
 
 setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
-clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
+clim= read.csv("AlexanderClimateAll.csv")
+#Just resurvey years
+#clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
 
-#spring means:
+#spring means, doy 60-151:
+clim.spr= aggregate(clim[which(clim$Julian %in% 60:151),c("Max","Min","Mean")], list(clim$Site[which(clim$Julian %in% 60:151)], clim$Year[which(clim$Julian %in% 60:151)]), FUN=mean)
+names(clim.spr)[1:2]=c("Site","Year")
+clim.spr$Seas="spring"
+clim.spr$SiteYr= paste(clim.spr$Site, clim.spr$Year, sep="_")
 
-#summer means:
+#summer means, doy 152-243:
+clim.sum= aggregate(clim[which(clim$Julian %in% 152:243),c("Max","Min","Mean")], list(clim$Site[which(clim$Julian %in% 152:243)], clim$Year[which(clim$Julian %in% 152:243)]), FUN=mean)
+names(clim.sum)[1:2]=c("Site","Year")
+clim.sum$Seas="summer"
+clim.sum$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
+
+clim.seas= rbind(clim.spr, clim.sum)
+
+#plot
+ggplot(data=clim.seas, aes(x=Year, y = Max, color=Site))+ 
+  facet_wrap(~Seas)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+ggplot(data=clim.seas, aes(x=Year, y = Mean, color=Site))+ 
+  facet_wrap(~Seas)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+ggplot(data=clim.seas, aes(x=Year, y = Min, color=Site))+ 
+  facet_wrap(~Seas)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+
+sort(unique(bs.all$Year))
+
+#----------------
+#Add Boulder and C1 climate data to body size
+
 
