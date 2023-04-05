@@ -9,6 +9,7 @@ library(ncdf4)
 library(tidyverse)
 library(lubridate)
 library(zoo)
+library(plyr)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 bs.all= read.csv("BodySize_sub_Sept2022.csv")
@@ -512,3 +513,67 @@ bs.all$t28.anom= bs.all$t_28d - clim.sum$t_28d.anom[match1]
 #save data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 write.csv(bs.all, "BodySize_wClim.csv" )
+
+#--------
+#climate plots
+
+#seasonal
+clim.me$year= as.numeric(clim.me$year)
+ggplot(data=clim.me, aes(x=year, y = Tspr, group= site, color=site))+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+ggplot(data=clim.me, aes(x=year, y = Tsum, group= site, color=site))+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+ggplot(data=clim.me, aes(x=year, y = springdd, group= site, color=site))+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+
+ggplot(data=clim.m, aes(x=year, y = t2m, group= site, color=site))+ 
+  facet_wrap(~seas)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+
+ggplot(data=nc.m.all, aes(x=year, y = t2m, group= site, color=site))+ 
+  facet_wrap(~month)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+
+#----------
+#Boulder data
+#daily: https://psl.noaa.gov/boulder/data/boulderdaily.complete.txt
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData/NOAA/")
+clim.min= read.csv("NOAA_Boulder_monthly_min.csv")
+clim.means= read.csv("NOAA_Boulder_monthly_means.csv")
+clim.max= read.csv("NOAA_Boulder_monthly_max.csv")
+
+clim.min$Tspr= rowMeans( clim.min[,c("MAR","APR","MAY")] )
+clim.min$Tsum= rowMeans( clim.min[,c("JUN","JUL","AUG")] )
+clim.means$Tspr= rowMeans( clim.means[,c("MAR","APR","MAY")] )
+clim.means$Tsum= rowMeans( clim.means[,c("JUN","JUL","AUG")] )
+clim.max$Tspr= rowMeans( clim.max[,c("MAR","APR","MAY")] )
+clim.max$Tsum= rowMeans( clim.max[,c("JUN","JUL","AUG")] )
+
+clim.min$metric="min"
+clim.means$metric="means"
+clim.max$metric="max"
+
+clim.b= rbind(clim.min[,c("Year","Tspr","Tsum","metric")], clim.means[,c("Year","Tspr","Tsum","metric")], clim.max[,c("Year","Tspr","Tsum","metric")])
+
+ggplot(data=clim.b[which(clim.b$Year>1930),], aes(x=Year, y = Tspr))+ 
+  facet_wrap(~metric)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+ggplot(data=clim.b[which(clim.b$Year>1930),], aes(x=Year, y = Tsum))+ 
+  facet_wrap(~metric)+
+  geom_line()+geom_point()+geom_smooth(method='lm')
+
+#----------------
+#climate data
+
+#means
+setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
+clim1= read.csv("Clim1Data.csv")
+
+setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
+clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
+
+#spring means:
+
+#summer means:
+
