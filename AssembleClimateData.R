@@ -11,8 +11,10 @@ library(lubridate)
 library(zoo)
 library(plyr)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
-bs.all= read.csv("BodySize_sub_Sept2022.csv")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+bs.all= read.csv("BodySize_sub.csv")
+#bs.all= read.csv("BodySize_all.csv")
+
 bs.all$Year= as.numeric(as.character(bs.all$Year))
 bs.all$Year[which(bs.all$Year==1048)]<- 1948
 bs.all$Year[which(bs.all$Year==1049)]<- 1949
@@ -392,7 +394,7 @@ clim.me$springdd= nc.hr.sum$cdd_sum[match1]
 
 #add closest CO grid cell 
 diffs= cbind(abs(sites.grid$Longitude+105.59), abs(sites.grid$Longitude+105.34) )
-sites.grid$clim.site= c("Boulder1", "Boulder2")[apply(diffs, 1, FUN = which.min)]
+sites.grid$clim.site= c("Boulder1", "Boulder2")[apply(diffs, 1, FUN = which.max)]
 sites.ind$clim.site=c("Rollins", "Evans", "Evans")
 sites.clim= rbind(sites.grid, sites.ind)
 
@@ -539,22 +541,22 @@ ggplot(data=nc.m.all, aes(x=year, y = t2m, group= site, color=site))+
 #daily: https://psl.noaa.gov/boulder/data/boulderdaily.complete.txt
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData/NOAA/")
-clim.min= read.csv("NOAA_Boulder_monthly_min.csv")
-clim.means= read.csv("NOAA_Boulder_monthly_means.csv")
 clim.max= read.csv("NOAA_Boulder_monthly_max.csv")
+clim.means= read.csv("NOAA_Boulder_monthly_means.csv")
+clim.min= read.csv("NOAA_Boulder_monthly_min.csv")
 
-clim.min$Tspr= rowMeans( clim.min[,c("MAR","APR","MAY")] )
-clim.min$Tsum= rowMeans( clim.min[,c("JUN","JUL","AUG")] )
-clim.means$Tspr= rowMeans( clim.means[,c("MAR","APR","MAY")] )
-clim.means$Tsum= rowMeans( clim.means[,c("JUN","JUL","AUG")] )
 clim.max$Tspr= rowMeans( clim.max[,c("MAR","APR","MAY")] )
 clim.max$Tsum= rowMeans( clim.max[,c("JUN","JUL","AUG")] )
+clim.means$Tspr= rowMeans( clim.means[,c("MAR","APR","MAY")] )
+clim.means$Tsum= rowMeans( clim.means[,c("JUN","JUL","AUG")] )
+clim.min$Tspr= rowMeans( clim.min[,c("MAR","APR","MAY")] )
+clim.min$Tsum= rowMeans( clim.min[,c("JUN","JUL","AUG")] )
 
-clim.min$metric="min"
-clim.means$metric="means"
 clim.max$metric="max"
+clim.means$metric="means"
+clim.min$metric="min"
 
-clim.b= rbind(clim.min[,c("Year","Tspr","Tsum","metric")], clim.means[,c("Year","Tspr","Tsum","metric")], clim.max[,c("Year","Tspr","Tsum","metric")])
+clim.b= rbind(clim.max[,c("Year","Tspr","Tsum","metric")], clim.means[,c("Year","Tspr","Tsum","metric")], clim.min[,c("Year","Tspr","Tsum","metric")])
 
 ggplot(data=clim.b[which(clim.b$Year>1930),], aes(x=Year, y = Tspr))+ 
   facet_wrap(~metric)+
@@ -576,13 +578,13 @@ clim= read.csv("AlexanderClimateAll.csv")
 #clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
 
 #spring means, doy 60-151:
-clim.spr= aggregate(clim[which(clim$Julian %in% 60:151),c("Max","Min","Mean")], list(clim$Site[which(clim$Julian %in% 60:151)], clim$Year[which(clim$Julian %in% 60:151)]), FUN=mean)
+clim.spr= aggregate(clim[which(clim$Julian %in% 60:151),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 60:151)], clim$Year[which(clim$Julian %in% 60:151)]), FUN=mean)
 names(clim.spr)[1:2]=c("Site","Year")
 clim.spr$Seas="spring"
 clim.spr$SiteYr= paste(clim.spr$Site, clim.spr$Year, sep="_")
 
 #summer means, doy 152-243:
-clim.sum= aggregate(clim[which(clim$Julian %in% 152:243),c("Max","Min","Mean")], list(clim$Site[which(clim$Julian %in% 152:243)], clim$Year[which(clim$Julian %in% 152:243)]), FUN=mean)
+clim.sum= aggregate(clim[which(clim$Julian %in% 152:243),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 152:243)], clim$Year[which(clim$Julian %in% 152:243)]), FUN=mean)
 names(clim.sum)[1:2]=c("Site","Year")
 clim.sum$Seas="summer"
 clim.sum$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
@@ -600,9 +602,170 @@ ggplot(data=clim.seas, aes(x=Year, y = Min, color=Site))+
   facet_wrap(~Seas)+
   geom_line()+geom_point()+geom_smooth(method='lm')
 
-sort(unique(bs.all$Year))
-
 #----------------
 #Add Boulder and C1 climate data to body size
 
+#Add Boulder spring, summer
+#add 2012, 2013 average
+b.20125= aggregate(clim.b[clim.b$Year %in% 2012:2013,c("Tspr","Tsum")], list(clim.b[clim.b$Year %in% 2012:2013,]$metric), FUN=mean)
+b.20125= cbind("2012.5",b.20125[,c(2,3,1)])
+colnames(b.20125)[1:4]=c("Year","Tspr","Tsum","metric")
+clim.b= rbind(clim.b, b.20125)
 
+#estimate climate anomaly
+clim.b.ag= aggregate(clim.b[clim.b$Year %in% 1950:1980,c("Tspr","Tsum")], list(clim.b[clim.b$Year %in% 1950:1980,]$metric), FUN=mean, na.rm=TRUE)
+names(clim.b.ag)[1]=c("metric")
+
+match1= match(clim.b$metric, clim.b.ag$metric)
+clim.b$Tspr.anom= clim.b$Tspr - clim.b.ag$Tspr[match1]
+clim.b$Tsum.anom= clim.b$Tsum - clim.b.ag$Tsum[match1]
+
+#add data
+match1= match(bs.all$Year, clim.b[which(clim.b$metric=="min"),"Year"])
+bs.all$Tspr.min.bould= clim.b$Tspr[which(clim.b$metric=="min")][match1]
+bs.all$Tsum.min.bould= clim.b$Tsum[which(clim.b$metric=="min")][match1]
+bs.all$Tspr.min.anom.bould= clim.b$Tspr.anom[which(clim.b$metric=="min")][match1]
+bs.all$Tsum.min.anom.bould= clim.b$Tsum.anom[which(clim.b$metric=="min")][match1]
+
+match1= match(bs.all$Year, clim.b[which(clim.b$metric=="means"),"Year"])
+bs.all$Tspr.mean.bould= clim.b$Tspr[which(clim.b$metric=="means")][match1]
+bs.all$Tsum.mean.bould= clim.b$Tsum[which(clim.b$metric=="means")][match1]
+bs.all$Tspr.mean.anom.bould= clim.b$Tspr.anom[which(clim.b$metric=="means")][match1]
+bs.all$Tsum.mean.anom.bould= clim.b$Tsum.anom[which(clim.b$metric=="means")][match1]
+
+match1= match(bs.all$Year, clim.b[which(clim.b$metric=="max"),"Year"])
+bs.all$Tspr.max.bould= clim.b$Tspr[which(clim.b$metric=="max")][match1]
+bs.all$Tsum.max.bould= clim.b$Tsum[which(clim.b$metric=="max")][match1]
+bs.all$Tspr.max.anom.bould= clim.b$Tspr.anom[which(clim.b$metric=="max")][match1]
+bs.all$Tsum.max.anom.bould= clim.b$Tsum.anom[which(clim.b$metric=="max")][match1]
+
+#---
+#add spring, summer year before
+#add 2011, 2012 average
+b.20125= aggregate(clim.b[clim.b$Year %in% 2011:2012,c("Tspr","Tsum")], list(clim.b[clim.b$Year %in% 2011:2012,]$metric), FUN=mean)
+b.20125= cbind("2011.5",b.20125[,c(2,3,1)])
+colnames(b.20125)[1:4]=c("Year","Tspr","Tsum","metric")
+clim.b= rbind(clim.b, b.20125)
+
+match1= match(bs.all$Year-1, clim.b[which(clim.b$metric=="min"),"Year"])
+bs.all$Tspr.min.bould.prev= clim.b$Tspr[which(clim.b$metric=="min")][match1]
+bs.all$Tsum.min.bould.prev= clim.b$Tsum[which(clim.b$metric=="min")][match1]
+bs.all$Tspr.min.anom.bould.prev= clim.b$Tspr.anom[which(clim.b$metric=="min")][match1]
+bs.all$Tsum.min.anom.bould.prev= clim.b$Tsum.anom[which(clim.b$metric=="min")][match1]
+
+match1= match(bs.all$Year-1, clim.b[which(clim.b$metric=="means"),"Year"])
+bs.all$Tspr.mean.bould.prev= clim.b$Tspr[which(clim.b$metric=="means")][match1]
+bs.all$Tsum.mean.bould.prev= clim.b$Tsum[which(clim.b$metric=="means")][match1]
+bs.all$Tspr.mean.anom.bould.prev= clim.b$Tspr.anom[which(clim.b$metric=="means")][match1]
+bs.all$Tsum.mean.anom.bould.prev= clim.b$Tsum.anom[which(clim.b$metric=="means")][match1]
+
+match1= match(bs.all$Year-1, clim.b[which(clim.b$metric=="max"),"Year"])
+bs.all$Tspr.max.bould.prev= clim.b$Tspr[which(clim.b$metric=="max")][match1]
+bs.all$Tsum.max.bould.prev= clim.b$Tsum[which(clim.b$metric=="max")][match1]
+bs.all$Tspr.max.anom.bould.prev= clim.b$Tspr.anom[which(clim.b$metric=="max")][match1]
+bs.all$Tsum.max.anom.bould.prev= clim.b$Tsum.anom[which(clim.b$metric=="max")][match1]
+
+#------
+#Add C1
+
+#add 2012, 2013 average
+b.20125= aggregate(clim.seas[clim.seas$Year %in% 2012:2013,c("Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 2012:2013,]$Site, clim.seas[clim.seas$Year %in% 2012:2013,]$Seas), FUN=mean)
+colnames(b.20125)[1:2]=c("Site","Seas")
+b.20125$Year= "2012.5"
+b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
+clim.seas= rbind(clim.seas, b.20125[,colnames(clim.seas)])
+
+b.20125= aggregate(clim.seas[clim.seas$Year %in% 2011:2012,c("Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 2011:2012,]$Site, clim.seas[clim.seas$Year %in% 2011:2012,]$Seas), FUN=mean)
+colnames(b.20125)[1:2]=c("Site","Seas")
+b.20125$Year= "2011.5"
+b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
+clim.seas= rbind(clim.seas, b.20125[,colnames(clim.seas)])
+
+#estimate climate anomaly
+clim.seas.ag= aggregate(clim.seas[clim.seas$Year %in% 1950:1980,c("Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 1950:1980,]$Site, clim.seas[clim.seas$Year %in% 1950:1980,]$Seas), FUN=mean, na.rm=TRUE)
+names(clim.seas.ag)[1:2]=c("Site","Seas")
+
+clim.seas.ag$SiteSeas= paste(clim.seas.ag$Site, clim.seas.ag$Seas, sep="_")
+clim.seas$SiteSeas= paste(clim.seas$Site, clim.seas$Seas, sep="_")
+
+match1= match(clim.seas$SiteSeas, clim.seas.ag$SiteSeas)
+clim.seas$Max.anom= clim.seas$Max - clim.seas.ag$Max[match1]
+clim.seas$Min.anom= clim.seas$Min - clim.seas.ag$Min[match1]
+clim.seas$Mean.anom= clim.seas$Mean - clim.seas.ag$Mean[match1]
+
+#spring and summer year
+match1= match(bs.all$Year, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring"),"Year"])
+bs.all$Tspr.min.C1= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.C1= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.C1= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+
+bs.all$Tspr.min.C1.anom= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.C1.anom= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.C1.anom= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+
+match1= match(bs.all$Year, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer"),"Year"])
+bs.all$Tsum.min.C1= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.C1= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.C1= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+
+bs.all$Tsum.min.C1.anom= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.C1.anom= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.C1.anom= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+
+#spring and summer year before
+match1= match(bs.all$Year-1, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring"),"Year"])
+bs.all$Tspr.min.C1.prev= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.C1.prev= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.C1.prev= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+
+bs.all$Tspr.min.C1.anom.prev= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.C1.anom.prev= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.C1.anom.prev= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+
+match1= match(bs.all$Year-1, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer"),"Year"])
+bs.all$Tsum.min.C1.prev= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.C1.prev= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.C1.prev= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+
+bs.all$Tsum.min.C1.anom.prev= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.C1.anom.prev= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.C1.anom.prev= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+
+#add temp 4 weeks before specimen date
+clim.month <- clim %>%
+  dplyr::arrange(Julian) %>% 
+  dplyr::group_by(Site) %>% 
+  dplyr::mutate(min_28d = zoo::rollmean(Min, k = 28, fill = NA), 
+                mean_28d = zoo::rollmean(Mean, k = 28, fill = NA),  
+                max_28d = zoo::rollmean(Max, k = 28, fill = NA)   )
+clim.month= as.data.frame(clim.month)
+
+#add temp 4 weeks before specimen date
+clim.month$YearDoy= paste(clim.month$Year, clim.month$Julian, sep="")
+
+match1= match(bs.all$yeardoy, clim.month[which(clim.month$Site=="C1"),"YearDoy"])
+bs.all$tmin_28d.C1= NA
+bs.all$tmean_28d.C1= NA
+bs.all$tmax_28d.C1= NA
+
+bs.all$tmin_28d.C1[which(!is.na(match1))]= clim.month[na.omit(match1), "min_28d"]
+bs.all$tmean_28d.C1[which(!is.na(match1))]= clim.month[na.omit(match1), "mean_28d"]
+bs.all$tmax_28d.C1[which(!is.na(match1))]= clim.month[na.omit(match1), "max_28d"]
+
+#make into anomally
+clim.sum= ddply(bs.all, c("Species", "elev"), summarise,
+                tmin_28d.C1.anom = mean(tmin_28d.C1, na.rm=TRUE), 
+                tmean_28d.C1.anom = mean(tmean_28d.C1, na.rm=TRUE),
+                tmax_28d.C1.anom = mean(tmax_28d.C1, na.rm=TRUE) )
+clim.sum$SpElev= paste(clim.sum$Species, clim.sum$elev, sep="")
+
+match1= match(bs.all$SpElev, clim.sum$SpElev)
+bs.all$tmin_28d.C1.anom= bs.all$tmin_28d.C1 - clim.sum$tmin_28d.C1.anom[match1]
+bs.all$tmean_28d.C1.anom= bs.all$tmean_28d.C1 - clim.sum$tmean_28d.C1.anom[match1]
+bs.all$tmax_28d.C1.anom= bs.all$tmax_28d.C1 - clim.sum$tmax_28d.C1.anom[match1]
+
+#----
+
+#save data
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+write.csv(bs.all, "BodySize_wClim_plusWS.csv" )

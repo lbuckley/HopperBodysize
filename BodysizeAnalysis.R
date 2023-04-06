@@ -112,8 +112,6 @@ colnames(bs.add1)= c("Species","Sites","Year","Project_info","Sex","Specimen_No"
 #combine
 bs= rbind(bs, bs.add1)
 
-#Write out data
-write.csv(bs, "BodySize_all_Oct2022.csv")
 #----------
 
 #add time period
@@ -155,8 +153,14 @@ elevs= rowMeans(bs[,c("Elevation_low","Elevation_upper")],na.rm=TRUE)
 inds= which(!is.na(elevs))
 bs$elev[inds]=elevs[inds]
 
+#Write out data
+write.csv(bs, "BodySize_all.csv")
+
 #order factors
 bs$Sex= factor(bs$Sex, order=TRUE, levels=c("F","M"))
+
+#----------------
+#subset data to matches
 
 #species by seasonal timing
 #add A. conspersa? "A. conspersa", 
@@ -212,7 +216,8 @@ bs.all$Year[which(bs.all$Year==1059)]<- 1959
 bs.all$Year[which(bs.all$Year==1060)]<- 1960
 
 #Write out data
-write.csv(bs.sub, "BodySize_sub_Sept2022.csv")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+write.csv(bs.sub, "BodySize_sub.csv")
 
 bs.all= bs.sub
 #------
