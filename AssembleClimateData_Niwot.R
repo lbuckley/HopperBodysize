@@ -237,59 +237,88 @@ with(clim, table(Site,Year))
 clim.nas <- aggregate(clim[,c("Max","Min","Mean")], list(clim$Site, clim$Year),
                          FUN=function(x) { sum(is.na(x)) })
 
-####END UPDATES
-#Fill A1 and B1 
-
 #PLOT RELATIONSHIPS
+clim$YrDoy= clim$Year +clim$Julian/365
+ggplot(data=clim[clim$Year %in% 1980:2022,], aes(x=YrDoy, y = Mean, color=Site))+ 
+  geom_line()+geom_smooth(method='lm')+ylim(-5,30)+facet_wrap(~Site)
+ggplot(data=clim, aes(x=YrDoy, y = Min, color=Site))+ 
+  geom_line()+geom_smooth(method='lm')+ylim(-5,30)
+ggplot(data=clim, aes(x=YrDoy, y = Max, color=Site))+ 
+  geom_line()+geom_smooth(method='lm')+ylim(-5,30)
 
 #reformat to wide format for Julian, Year by Site 
-clim.min= dcast(clim, Julian +Year ~ Site, value="Min")
-clim.max= dcast(clim, Julian +Year ~ Site, value="Max")
+clim.min= dcast(clim, Julian +Year ~ Site, value.var="Min", fun.aggregate=mean, na.rm=TRUE)
+clim.max= dcast(clim, Julian +Year ~ Site, value.var="Max", fun.aggregate=mean, na.rm=TRUE)
+clim.mean= dcast(clim, Julian +Year ~ Site, value.var="Mean", fun.aggregate=mean, na.rm=TRUE)
+#clim.min[is.nan(clim.min)] <- NA
 
-#MIN
-#plots
-clim2= clim.min
-clim2= clim.max
-ggplot(data=clim2, aes(x=A1, y = NOAA, color=Year))+geom_point() +theme_bw()
-ggplot(data=clim2, aes(x=A1, y = C1, color=Year))+geom_point() +theme_bw()
-ggplot(data=clim2, aes(x=A1, y = GR, color=Year))+geom_point() +theme_bw()
+#Fill A1 and B1 
+#clim.nas[clim.nas$Group.1=="A1",]
+clim.nas[clim.nas$Group.1=="B1",]
+#A1 1970-1986, 2012
+#B1 1970-1986, 2001
 
-#models
-clim2= clim.min
-min.noaa= summary(lm(A1~NOAA, data=clim2))
-min.c1= summary(lm(A1~C1, data=clim2))
-min.gr= summary(lm(A1~GR, data=clim2)) #SKIP WORST FIT
-clim2= clim.max
-max.noaa= summary(lm(A1~NOAA, data=clim2))
-max.c1= summary(lm(A1~C1, data=clim2))
-max.gr= summary(lm(A1~GR, data=clim2)) #SKIP WORST FIT
+#models for A1
+
+sites=c("A1","B1")
+metrics=c("Min","Max")
+
+for(clim.met in 1:2){
+
+  if(clim.met==1) clim2= clim.min
+  if(clim.met==2) clim2= clim.max
+  
+  for(site.ind in 1:2){
+  
+    msite=sites[site.ind]
+
+m.noaa= summary(lm( get(msite) ~NOAA, data=clim2))
+m.c1= summary(lm( get(msite) ~C1, data=clim2))
+m.d1= summary(lm( get(msite) ~D1, data=clim2)) 
+
+#predict
+clim2$pnoaa= m.noaa$coefficients[1,1] +m.noaa$coefficients[2,1]*clim2$NOAA
+clim2$pc1= m.c1$coefficients[1,1] +m.c1$coefficients[2,1]*clim2$C1
+clim2$pd1= m.d1$coefficients[1,1] +m.d1$coefficients[2,1]*clim2$D1
+
+#weight by r2
+clim2$pclim=(m.noaa$adj.r.squared*clim2$pnoaa + m.c1$adj.r.squared*clim2$pd1 + m.d1$adj.r.squared*clim2$pd1)/(m.noaa$adj.r.squared+m.c1$adj.r.squared+m.d1$adj.r.squared)
+
+#plot
+plot(clim2[,match(msite, colnames(clim2))], clim2$pclim)
+
+#subset to years
+clim3= clim2[clim2$Year %in% 1970:1986,]
+clim3$YrDoy= clim3$Year +clim3$Julian/365
+clim3=clim3[order(clim3$YrDoy),]
+
+#use model to fill in
+nas= which(is.na(clim3[,match(msite, colnames(clim3))]))
+clim3$clim.fill= clim3[,match(msite, colnames(clim3))]
+clim3$clim.fill[nas]= clim3$pclim[nas]
+
+} #end loop sites
+  
+  clim.colname= paste(sites)
+  sites=c("A1","B1")
+  metrics=c("Min","Max")
+  
+  if(clim.met==1) clim.min$sites[site.ind]= clim3$clim.fill
+  if(clim.met==2) clim.max$sites[site.ind]= clim3$clim.fill
+  
+} #end loop climate metric
+
+#plot
+plot(clim3$YrDoy, clim3[,match(msite, colnames(clim3))], type="l")
+#points(clim3$YrDoy, clim3$pclim, type="l", col="green")
+points(clim3$YrDoy, clim3$clim.fill, type="l", col="blue")
 
 #------------------
-#Predict 2009 and 2010
-clim1= clim[clim$Year %in%2009:2010 & clim$Site %in% c("A1","C1","NOAA","GR"),]
 
-#reformat to wide format for Julian, Year by Site 
-clim.min= cast(clim1, Julian +Year ~ Site, value="Min")
-clim.max= cast(clim1, Julian +Year ~ Site, value="Max")
-
-#predict min
-clim.min$A1.pnoaa= min.noaa$coefficients[1,1] +min.noaa$coefficients[2,1]*clim.min$NOAA
-clim.min$A1.pc1= min.c1$coefficients[1,1] +min.c1$coefficients[2,1]*clim.min$C1
-#weight by r2
-clim.min$A1=(min.noaa$adj.r.squared*clim.min$A1.pnoaa + min.c1$adj.r.squared*clim.min$A1.pc1)/(min.noaa$adj.r.squared+min.c1$adj.r.squared)
-
-#predict max
-clim.max$A1.pnoaa= max.noaa$coefficients[1,1] +max.noaa$coefficients[2,1]*clim.max$NOAA
-clim.max$A1.pc1= max.c1$coefficients[1,1] +max.c1$coefficients[2,1]*clim.max$C1
-#weight by r2
-clim.max$A1=(max.noaa$adj.r.squared*clim.max$A1.pnoaa + max.c1$adj.r.squared*clim.max$A1.pc1)/(max.noaa$adj.r.squared+max.c1$adj.r.squared)
-
-
-
-
+#Recombine data
 
 #write out
-write.csv(clim,"AlexanderClimateAssemble.csv")
+#write.csv(clim,"AlexanderClimateModel.csv")
 
 #=================================
 #spring means, doy 60-151:
