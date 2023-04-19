@@ -86,7 +86,7 @@ clim= rbind(clim, a1.dat)
 #daily: https://psl.noaa.gov/boulder/data/boulderdaily.complete.txt
 noaa.daily= read.csv("boulderdailycomplete.csv")
 #add 2015-current
-noaa.dat= noaa.daily[which(noaa.daily$year>2015),]
+noaa.dat= noaa.daily[which(noaa.daily$year>2014),]
 #convert to C
 noaa.dat$Min= (noaa.dat$tmin_F -32)*5/9
 noaa.dat$Max= (noaa.dat$tmax_F -32)*5/9
@@ -99,6 +99,8 @@ noaa.dat= noaa.dat[,c("Site","Date","year","mon","Julian","Max","Min","Mean")]
 names(noaa.dat)[3:4]=c("Year","Month")
 #add data
 clim= rbind(clim, noaa.dat)
+
+table(clim$Site, clim$Year)
 
 #recent A1 data hourly
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.3.6
@@ -225,6 +227,27 @@ d1.dat= d1.dat[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
 #add data
 clim= rbind(clim, d1.dat)
 
+#restrict days to spring and summer
+clim= clim[clim$Julian %in% 60:243,]
+
+#add in missing doys
+YrDoy= expand.grid(Site= unique(clim$Site),Year=1953:2023, Julian=60:243)
+YrDoy$YrDoy= YrDoy$Year +YrDoy$Julian/365
+YrDoy$SiteYrDoy= paste(YrDoy$Site, YrDoy$YrDoy, sep="_")
+
+clim$YrDoy= clim$Year +clim$Julian/365
+clim$SiteYrDoy= paste(clim$Site, clim$YrDoy, sep="_")
+#find missing
+match1= match(YrDoy$SiteYrDoy, clim$SiteYrDoy)
+no.match= which(is.na(match1))
+
+clim.add= clim[1:length(no.match),]
+clim.add[]= NA
+clim.add[,c("Site","Year","Julian", "YrDoy","SiteYrDoy")]= YrDoy[no.match,c("Site","Year","Julian", "YrDoy","SiteYrDoy")]
+
+#combine
+clim= rbind(clim, clim.add)
+
 #================
 #Assess and fill data
 
@@ -238,7 +261,6 @@ clim.nas <- aggregate(clim[,c("Max","Min","Mean")], list(clim$Site, clim$Year),
                          FUN=function(x) { sum(is.na(x)) })
 
 #PLOT RELATIONSHIPS
-clim$YrDoy= clim$Year +clim$Julian/365
 ggplot(data=clim[clim$Year %in% 1980:2022,], aes(x=YrDoy, y = Mean, color=Site))+ 
   geom_line()+geom_smooth(method='lm')+ylim(-5,30)+facet_wrap(~Site)
 ggplot(data=clim, aes(x=YrDoy, y = Min, color=Site))+ 
@@ -246,19 +268,25 @@ ggplot(data=clim, aes(x=YrDoy, y = Min, color=Site))+
 ggplot(data=clim, aes(x=YrDoy, y = Max, color=Site))+ 
   geom_line()+geom_smooth(method='lm')+ylim(-5,30)
 
+#make filled data
+clim.fill= clim
+
 #reformat to wide format for Julian, Year by Site 
 clim.min= dcast(clim, Julian +Year ~ Site, value.var="Min", fun.aggregate=mean, na.rm=TRUE)
 clim.max= dcast(clim, Julian +Year ~ Site, value.var="Max", fun.aggregate=mean, na.rm=TRUE)
 clim.mean= dcast(clim, Julian +Year ~ Site, value.var="Mean", fun.aggregate=mean, na.rm=TRUE)
 #clim.min[is.nan(clim.min)] <- NA
 
+#make matching variables
+clim.min$YrDoy= clim.min$Year +clim.min$Julian/365
+clim.max$YrDoy= clim.max$Year +clim.max$Julian/365
+clim.mean$YrDoy= clim.mean$Year +clim.mean$Julian/365
+
 #Fill A1 and B1 
 #clim.nas[clim.nas$Group.1=="A1",]
 clim.nas[clim.nas$Group.1=="B1",]
 #A1 1970-1986, 2012
 #B1 1970-1986, 2001
-
-#models for A1
 
 sites=c("A1","B1")
 metrics=c("Min","Max")
@@ -272,6 +300,13 @@ for(clim.met in 1:2){
   
     msite=sites[site.ind]
 
+    #for(time.k in 1:2){
+    #  if(time.k==1) yrs= 1965:1990
+    #  if(time.k==2) yrs= 2005:2015
+    
+    #subset to years
+    #clim2= clim2[clim2$Year %in% yrs,]
+    
 m.noaa= summary(lm( get(msite) ~NOAA, data=clim2))
 m.c1= summary(lm( get(msite) ~C1, data=clim2))
 m.d1= summary(lm( get(msite) ~D1, data=clim2)) 
@@ -287,8 +322,7 @@ clim2$pclim=(m.noaa$adj.r.squared*clim2$pnoaa + m.c1$adj.r.squared*clim2$pd1 + m
 #plot
 plot(clim2[,match(msite, colnames(clim2))], clim2$pclim)
 
-#subset to years
-clim3= clim2[clim2$Year %in% 1970:1986,]
+clim3=clim2
 clim3$YrDoy= clim3$Year +clim3$Julian/365
 clim3=clim3[order(clim3$YrDoy),]
 
@@ -297,30 +331,39 @@ nas= which(is.na(clim3[,match(msite, colnames(clim3))]))
 clim3$clim.fill= clim3[,match(msite, colnames(clim3))]
 clim3$clim.fill[nas]= clim3$pclim[nas]
 
+clim3$SiteYrDoy= paste(sites[site.ind], clim3$YrDoy, sep="_")
+match1= match(clim3$SiteYrDoy, clim.fill$SiteYrDoy)
+
+clim3[is.na(match1),]
+
+if(clim.met==1) clim.fill$Min[match1]= clim3$clim.fill
+if(clim.met==2) clim.fill$Max[match1]= clim3$clim.fill
+ 
+#} #end loop time periods
 } #end loop sites
-  
-  clim.colname= paste(sites)
-  sites=c("A1","B1")
-  metrics=c("Min","Max")
-  
-  if(clim.met==1) clim.min$sites[site.ind]= clim3$clim.fill
-  if(clim.met==2) clim.max$sites[site.ind]= clim3$clim.fill
-  
 } #end loop climate metric
 
+#sort clim.fill
+clim.fill= clim.fill[order(clim.fill$YrDoy),]
+
 #plot
-plot(clim3$YrDoy, clim3[,match(msite, colnames(clim3))], type="l")
-#points(clim3$YrDoy, clim3$pclim, type="l", col="green")
-points(clim3$YrDoy, clim3$clim.fill, type="l", col="blue")
+site.ind=1
+plot(clim.fill[clim.fill$Site==sites[site.ind],]$YrDoy, clim.fill[clim.fill$Site==sites[site.ind],]$Min, type="l")
+points(clim[clim$Site==sites[site.ind],]$YrDoy, clim[clim$Site==sites[site.ind],]$Min, type="l", col="blue")
 
-#------------------
+#estimate mean
+clim.fill$Mean[which(is.na(clim.fill$Mean))]= (clim.fill$Min[which(is.na(clim.fill$Mean))] + clim.fill$Max[which(is.na(clim.fill$Mean))])/2
 
-#Recombine data
+#assess NAs
+clim.na= clim.fill[which(is.na(clim.fill$Max)),]
 
-#write out
-#write.csv(clim,"AlexanderClimateModel.csv")
+##=================================
+#plot
+ggplot(data=clim.fill[clim.fill$Year %in% 1980:2022,], aes(x=YrDoy, y = Mean, color=Site))+ 
+  geom_line()+geom_smooth(method='lm')+ylim(-5,30)+facet_wrap(~Site)
 
-#=================================
+clim= clim.fill
+
 #spring means, doy 60-151:
 clim.spr= aggregate(clim[which(clim$Julian %in% 60:151),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 60:151)], clim$Year[which(clim$Julian %in% 60:151)]), FUN=mean)
 names(clim.spr)[1:2]=c("Site","Year")
@@ -336,6 +379,7 @@ clim.sum$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
 clim.seas= rbind(clim.spr, clim.sum)
 
 #plot
+clim.seas$Year= as.numeric(clim.seas$Year)
 ggplot(data=clim.seas, aes(x=Year, y = Max, color=Site))+ 
   facet_wrap(~Seas)+
   geom_line()+geom_point()+geom_smooth(method='lm')
@@ -350,7 +394,7 @@ ggplot(data=clim.seas, aes(x=Year, y = Min, color=Site))+
 #Add climate data to body size
 
 #add 2012, 2013 average
-b.20125= aggregate(clim.seas[clim.seas$Year %in% 2012:2013,c("Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 2012:2013,]$Site, clim.seas[clim.seas$Year %in% 2012:2013,]$Seas), FUN=mean)
+b.20125= aggregate(clim.seas[clim.seas$Year %in% 2012:2013,c("Year","Site","Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 2012:2013,]$Site, clim.seas[clim.seas$Year %in% 2012:2013,]$Seas), FUN=mean)
 colnames(b.20125)[1:2]=c("Site","Seas")
 b.20125$Year= "2012.5"
 b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")

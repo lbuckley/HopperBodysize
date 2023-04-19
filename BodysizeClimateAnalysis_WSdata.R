@@ -61,6 +61,7 @@ mod.lmer.noelev <- lmer(Femur.anom~env_cs*time*Sex*Species +
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
 
+
 mod.aic[env.ind,3]= AIC(mod.lmer)
 mod.aic[env.ind,4]= AIC(mod.lmer.noelev)
 
