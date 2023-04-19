@@ -70,23 +70,44 @@ clim= read.csv("AlexanderClimateAll.csv")
 with(clim, table(Site, Year))
 #A1 2009, 2010, 2021, through 2014
 
+#add in missing doys
+YrDoy= expand.grid(Site= unique(clim$Site),Year=1953:2023, Julian=60:243)
+YrDoy$YrDoy= YrDoy$Year +YrDoy$Julian/365
+YrDoy$SiteYrDoy= paste(YrDoy$Site, YrDoy$YrDoy, sep="_")
+
+clim$YrDoy= clim$Year +clim$Julian/365
+clim$SiteYrDoy= paste(clim$Site, clim$YrDoy, sep="_")
+#find missing
+match1= match(YrDoy$SiteYrDoy, clim$SiteYrDoy)
+no.match= which(is.na(match1))
+
+clim.add= clim[1:length(no.match),]
+clim.add[]= NA
+clim.add[,c("Site","Year","Julian", "YrDoy","SiteYrDoy")]= YrDoy[no.match,c("Site","Year","Julian", "YrDoy","SiteYrDoy")]
+
+#combine
+clim= rbind(clim, clim.add)
+
+#----
 #Just resurvey years with additional filling
 clim.f= read.csv("AlexanderClimateAll_filled_May2022.csv")
 #counts by species and sites
 with(clim.f, table(Site, Year))
 
-#Add A1 2009, 2010, 2012
-a1.dat= clim.f[which(clim.f$Site=="A1" & clim.f$Year %in% c(2009,2010,2012)),c("Site","Year","Julian","Max","Min","Mean")]
-a1.dat$Date= NA
-a1.dat$Month= NA
-a1.dat= a1.dat[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, a1.dat)
+#find nas to fill
+clim.f$YrDoy= clim.f$Year +clim.f$Julian/365
+clim.f$SiteYrDoy= paste(clim.f$Site, clim.f$YrDoy, sep="_")
 
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.f$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[matched,c("Max","Min","Mean")]=clim.f[match1[matched],c("Max","Min","Mean")]
+
+#----
+#Add NOAA data
 #daily: https://psl.noaa.gov/boulder/data/boulderdaily.complete.txt
-noaa.daily= read.csv("boulderdailycomplete.csv")
-#add 2015-current
-noaa.dat= noaa.daily[which(noaa.daily$year>2014),]
+noaa.dat= read.csv("boulderdailycomplete.csv")
 #convert to C
 noaa.dat$Min= (noaa.dat$tmin_F -32)*5/9
 noaa.dat$Max= (noaa.dat$tmax_F -32)*5/9
@@ -94,14 +115,20 @@ noaa.dat$Site="NOAA"
 noaa.dat$Month= noaa.dat$mon
 noaa.dat$Date= paste(noaa.dat$mon, noaa.dat$day, noaa.dat$year, sep="/")
 noaa.dat$Julian= day_of_year(day= noaa.dat$Date, format = "%m/%d/%Y")
-noaa.dat$Mean= NA
-noaa.dat= noaa.dat[,c("Site","Date","year","mon","Julian","Max","Min","Mean")]
-names(noaa.dat)[3:4]=c("Year","Month")
-#add data
-clim= rbind(clim, noaa.dat)
 
-table(clim$Site, clim$Year)
+#find nas to fill
+noaa.dat$YrDoy= noaa.dat$year +noaa.dat$Julian/365
+noaa.dat$SiteYrDoy= paste(noaa.dat$Site, noaa.dat$YrDoy, sep="_")
 
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], noaa.dat$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[matched,c("Max","Min")]=noaa.dat[match1[matched],c("Max","Min")]
+
+########END UPDATES, CREATING MORE NAs?
+
+#----------
 #recent A1 data hourly
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.3.6
 clim.a1= read.csv("a-1hobo.hourly.jm.data.csv")
@@ -229,24 +256,6 @@ clim= rbind(clim, d1.dat)
 
 #restrict days to spring and summer
 clim= clim[clim$Julian %in% 60:243,]
-
-#add in missing doys
-YrDoy= expand.grid(Site= unique(clim$Site),Year=1953:2023, Julian=60:243)
-YrDoy$YrDoy= YrDoy$Year +YrDoy$Julian/365
-YrDoy$SiteYrDoy= paste(YrDoy$Site, YrDoy$YrDoy, sep="_")
-
-clim$YrDoy= clim$Year +clim$Julian/365
-clim$SiteYrDoy= paste(clim$Site, clim$YrDoy, sep="_")
-#find missing
-match1= match(YrDoy$SiteYrDoy, clim$SiteYrDoy)
-no.match= which(is.na(match1))
-
-clim.add= clim[1:length(no.match),]
-clim.add[]= NA
-clim.add[,c("Site","Year","Julian", "YrDoy","SiteYrDoy")]= YrDoy[no.match,c("Site","Year","Julian", "YrDoy","SiteYrDoy")]
-
-#combine
-clim= rbind(clim, clim.add)
 
 #================
 #Assess and fill data
