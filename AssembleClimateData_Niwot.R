@@ -102,7 +102,7 @@ nas= which(is.na(clim$Max))
 match1= match(clim$SiteYrDoy[nas], clim.f$SiteYrDoy)
 
 matched=which(!is.na(match1))
-clim[matched,c("Max","Min","Mean")]=clim.f[match1[matched],c("Max","Min","Mean")]
+clim[nas[matched],c("Max","Min","Mean")]=clim.f[match1[matched],c("Max","Min","Mean")]
 
 #----
 #Add NOAA data
@@ -124,16 +124,12 @@ nas= which(is.na(clim$Max))
 match1= match(clim$SiteYrDoy[nas], noaa.dat$SiteYrDoy)
 
 matched=which(!is.na(match1))
-clim[matched,c("Max","Min")]=noaa.dat[match1[matched],c("Max","Min")]
-
-########END UPDATES, CREATING MORE NAs?
+clim[nas[matched],c("Max","Min")]=noaa.dat[match1[matched],c("Max","Min")]
 
 #----------
 #recent A1 data hourly
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.3.6
 clim.a1= read.csv("a-1hobo.hourly.jm.data.csv")
-#drop before 2015
-clim.a1= clim.a1[clim.a1$year>2014,]
 
 #calculate daily Max, Min, Mean
 clim.a1= ddply(clim.a1, c("date","jday", "year"), summarise,
@@ -142,15 +138,20 @@ names(clim.a1)[1:3]= c("Date","Julian","Year")
 clim.a1$Site= "A1"
 clim.a1$Month= as.numeric(format(as.Date(clim.a1$Date, format="%Y-%m-%d"),"%m"))
   
-clim.a1= clim.a1[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, clim.a1)
+#find nas to fill
+clim.a1$YrDoy= clim.a1$Year +clim.a1$Julian/365
+clim.a1$SiteYrDoy= paste(clim.a1$Site, clim.a1$YrDoy, sep="_")
 
-#recent B1 data hourly
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.a1$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=clim.a1[match1[matched],c("Max","Min","Mean")]
+
+#--------
+#recent b1 data hourly
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.5.5
 clim.b1= read.csv("b-1hobo.hourly.jm.data.csv")
-#drop before 2015
-clim.b1= clim.b1[clim.b1$year>2015,]
 
 #calculate daily Max, Min, Mean
 clim.b1= ddply(clim.b1, c("date","jday", "year"), summarise,
@@ -159,22 +160,37 @@ names(clim.b1)[1:3]= c("Date","Julian","Year")
 clim.b1$Site= "B1"
 clim.b1$Month= as.numeric(format(as.Date(clim.b1$Date, format="%Y-%m-%d"),"%m"))
 
-clim.b1= clim.b1[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, clim.b1)
+#find nas to fill
+clim.b1$YrDoy= clim.b1$Year +clim.b1$Julian/365
+clim.b1$SiteYrDoy= paste(clim.b1$Site, clim.b1$YrDoy, sep="_")
 
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.b1$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=clim.b1[match1[matched],c("Max","Min","Mean")]
+
+#--------
 #recent C1
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.401.7
 clim.c1= read.csv("c-1cr23x-cr1000.daily.ml.data.csv")
 #through 2021
-#drop before 2015
-clim.c1= clim.c1[which(clim.c1$year>2014),c("date","year","jday","airtemp_hmp1_max","airtemp_hmp1_min","airtemp_hmp1_avg")]
+clim.c1= clim.c1[,c("date","year","jday","airtemp_hmp1_max","airtemp_hmp1_min","airtemp_hmp1_avg")]
 names(clim.c1)= c("Date","Year","Julian","Max","Min","Mean")
 clim.c1$Site= "C1"
 clim.c1$Month= as.numeric(format(as.Date(clim.c1$Date, format="%Y-%m-%d"),"%m"))
-clim.c1= clim.c1[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, clim.c1)
+
+#find nas to fill
+clim.c1$YrDoy= clim.c1$Year +clim.c1$Julian/365
+clim.c1$SiteYrDoy= paste(clim.c1$Site, clim.c1$YrDoy, sep="_")
+
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.c1$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=clim.c1[match1[matched],c("Max","Min","Mean")]
+
+#--------
 
 #C1 chart recorder
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.411.15
@@ -185,21 +201,62 @@ clim.c1chart= read.csv("c-1tdayv.ml.data.csv")
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.402.5
 clim.d1= read.csv("d-1cr23x-cr1000.daily.ml.data.csv")
 #through 2021
-#drop before 2015
-clim.d1= clim.d1[which(clim.d1$year>2014),c("date","year","jday","airtemp_hmp1_max","airtemp_hmp1_min","airtemp_hmp1_avg")]
+clim.d1= clim.d1[,c("date","year","jday","airtemp_hmp1_max","airtemp_hmp1_min","airtemp_hmp1_avg")]
 names(clim.d1)= c("Date","Year","Julian","Max","Min","Mean")
 clim.d1$Site= "D1"
 clim.d1$Month= as.numeric(format(as.Date(clim.d1$Date, format="%Y-%m-%d"),"%m"))
-clim.d1= clim.d1[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, clim.d1)
+
+#find nas to fill
+clim.d1$YrDoy= clim.d1$Year +clim.d1$Julian/365
+clim.d1$SiteYrDoy= paste(clim.d1$Site, clim.d1$YrDoy, sep="_")
+
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.d1$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=clim.d1[match1[matched],c("Max","Min","Mean")]
+
+#--------
 
 #infilled C1 temp data, 1952-2018
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.185.2
 
+clim.c1= read.csv("c1_infilled_temp_daily.tk.data.csv")
+#through 2021
+clim.c1$Site= "C1"
+clim.c1$Julian= day_of_year(day= clim.c1$date, format = "%Y-%m-%d")
+
+#find nas to fill
+clim.c1$YrDoy= clim.c1$year +clim.c1$Julian/365
+clim.c1$SiteYrDoy= paste(clim.c1$Site, clim.c1$YrDoy, sep="_")
+
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.c1$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=clim.c1[match1[matched],c("max_temp","min_temp","mean_temp")]
+
+#--------
+
 #infilled D1 temp data, 1952-2018
 #https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-nwt.187.2
 
+clim.d1= read.csv("d1_infilled_temp_daily.tk.data.csv")
+#through 2021
+clim.d1$Site= "D1"
+clim.d1$Julian= day_of_year(day= clim.d1$date, format = "%Y-%m-%d")
+
+#find nas to fill
+clim.d1$YrDoy= clim.d1$year +clim.d1$Julian/365
+clim.d1$SiteYrDoy= paste(clim.d1$Site, clim.d1$YrDoy, sep="_")
+
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], clim.d1$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=clim.d1[match1[matched],c("max_temp","min_temp","mean_temp")]
+
+#--------
 #real time met
 #https://nwt.lternet.edu/real-time-met
 
@@ -211,9 +268,6 @@ names(c1.dat)=c("TIMESTAMP","Mean") #AirTC_as_Avg
 c1.dat$Year= as.numeric(format(as.Date(c1.dat$TIMESTAMP, format="%Y-%m-%d %H:%M:%S"),"%Y"))
 c1.dat$Date= as.Date(c1.dat$TIMESTAMP, format="%Y-%m-%d %H:%M:%S")
 
-#drop before 2022
-c1.dat= c1.dat[c1.dat$Year>2021,]
-
 c1.dat$Julian= day_of_year(day= c1.dat$Date, format = "%Y-&M-%D")
 
 #calculate daily Max, Min, Mean
@@ -223,9 +277,17 @@ names(c1.dat)[1:3]= c("Date","Julian","Year")
 c1.dat$Site= "C1"
 c1.dat$Month= as.numeric(format(as.Date(c1.dat$Date, format="%Y-%m-%d"),"%m"))
 
-c1.dat= c1.dat[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, c1.dat)
+#find nas to fill
+c1.dat$YrDoy= c1.dat$Year +c1.dat$Julian/365
+c1.dat$SiteYrDoy= paste(c1.dat$Site, c1.dat$YrDoy, sep="_")
+
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], c1.dat$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=c1.dat[match1[matched],c("Max","Min","Mean")]
+
+#----------------
 
 #D1 data
 #check header
@@ -238,9 +300,6 @@ names(d1.dat)=c("TIMESTAMP","Mean") #AirTC_as_Avg
 d1.dat$Year= as.numeric(format(as.Date(d1.dat$TIMESTAMP, format="%Y-%m-%d %H:%M:%S"),"%Y"))
 d1.dat$Date= as.Date(d1.dat$TIMESTAMP, format="%Y-%m-%d %H:%M:%S")
 
-#drop before 2022
-d1.dat= d1.dat[d1.dat$Year>2021,]
-
 d1.dat$Julian= day_of_year(day= d1.dat$Date, format = "%Y-&M-%D")
 
 #calculate daily Max, Min, Mean
@@ -250,15 +309,26 @@ names(d1.dat)[1:3]= c("Date","Julian","Year")
 d1.dat$Site= "D1"
 d1.dat$Month= as.numeric(format(as.Date(d1.dat$Date, format="%Y-%m-%d"),"%m"))
 
-d1.dat= d1.dat[,c("Site","Date","Year","Month","Julian","Max","Min","Mean")]
-#add data
-clim= rbind(clim, d1.dat)
+#find nas to fill
+d1.dat$YrDoy= d1.dat$Year +d1.dat$Julian/365
+d1.dat$SiteYrDoy= paste(d1.dat$Site, d1.dat$YrDoy, sep="_")
 
-#restrict days to spring and summer
-clim= clim[clim$Julian %in% 60:243,]
+nas= which(is.na(clim$Max))
+match1= match(clim$SiteYrDoy[nas], d1.dat$SiteYrDoy)
+
+matched=which(!is.na(match1))
+clim[nas[matched],c("Max","Min","Mean")]=d1.dat[match1[matched],c("Max","Min","Mean")]
+
+#drop very low D1 values in 2022
+clim[which(clim$Site=="D1" & clim$Year>2021),"Max"]=NA
+clim[which(clim$Site=="D1" & clim$Year>2021),"Min"]=NA
+clim[which(clim$Site=="D1" & clim$Year>2021),"Mean"]=NA
 
 #================
 #Assess and fill data
+
+#restrict days to spring and summer
+clim= clim[clim$Julian %in% 60:243,]
 
 #estimate mean from min and max
 inds= which(!is.na(clim$Max)&!is.na(clim$Min)&is.na(clim$Mean))
@@ -297,7 +367,7 @@ clim.nas[clim.nas$Group.1=="B1",]
 #A1 1970-1986, 2012
 #B1 1970-1986, 2001
 
-sites=c("A1","B1")
+sites=c("A1","B1","C1","D1","NOAA")
 metrics=c("Min","Max")
 
 for(clim.met in 1:2){
@@ -326,7 +396,9 @@ clim2$pc1= m.c1$coefficients[1,1] +m.c1$coefficients[2,1]*clim2$C1
 clim2$pd1= m.d1$coefficients[1,1] +m.d1$coefficients[2,1]*clim2$D1
 
 #weight by r2
-clim2$pclim=(m.noaa$adj.r.squared*clim2$pnoaa + m.c1$adj.r.squared*clim2$pd1 + m.d1$adj.r.squared*clim2$pd1)/(m.noaa$adj.r.squared+m.c1$adj.r.squared+m.d1$adj.r.squared)
+clim2$pclim=(m.noaa$adj.r.squared*clim2$pnoaa + m.c1$adj.r.squared*clim2$pc1 + m.d1$adj.r.squared*clim2$pd1)/(m.noaa$adj.r.squared+m.c1$adj.r.squared+m.d1$adj.r.squared)
+#drop D1 for 2022
+clim2$pclim[which(clim2$Year>2021)]=(m.noaa$adj.r.squared*clim2$pnoaa[which(clim2$Year>2021)] + m.c1$adj.r.squared*clim2$pc1[which(clim2$Year>2021)])/(m.noaa$adj.r.squared+m.c1$adj.r.squared)
 
 #plot
 plot(clim2[,match(msite, colnames(clim2))], clim2$pclim)
@@ -356,7 +428,7 @@ if(clim.met==2) clim.fill$Max[match1]= clim3$clim.fill
 clim.fill= clim.fill[order(clim.fill$YrDoy),]
 
 #plot
-site.ind=1
+site.ind=5
 plot(clim.fill[clim.fill$Site==sites[site.ind],]$YrDoy, clim.fill[clim.fill$Site==sites[site.ind],]$Min, type="l")
 points(clim[clim$Site==sites[site.ind],]$YrDoy, clim[clim$Site==sites[site.ind],]$Min, type="l", col="blue")
 
@@ -421,49 +493,64 @@ names(clim.seas.ag)[1:2]=c("Site","Seas")
 
 clim.seas.ag$SiteSeas= paste(clim.seas.ag$Site, clim.seas.ag$Seas, sep="_")
 clim.seas$SiteSeas= paste(clim.seas$Site, clim.seas$Seas, sep="_")
+clim.seas$SiteYrSeas= paste(clim.seas$Site, clim.seas$Year, clim.seas$Seas, sep="_")
 
 match1= match(clim.seas$SiteSeas, clim.seas.ag$SiteSeas)
 clim.seas$Max.anom= clim.seas$Max - clim.seas.ag$Max[match1]
 clim.seas$Min.anom= clim.seas$Min - clim.seas.ag$Min[match1]
 clim.seas$Mean.anom= clim.seas$Mean - clim.seas.ag$Mean[match1]
 
+#------------
+#Add climate data to body size
+bs.all$ClimSite= bs.all$Sites
+bs.all$ClimSite[bs.all$ClimSite=="Niwot Ridge (D1)"]="D1"
+bs.all$ClimSite[bs.all$ClimSite=="Chautauqua Mesa"]="NOAA"
+bs.all$ClimSite[bs.all$ClimSite=="Summit lake"]="C1" ## Check choice of climate sites
+bs.all$ClimSite[bs.all$ClimSite=="Sunshine Canyon"]="A1"
+bs.all$ClimSite[bs.all$ClimSite=="Mt. Evans"]="C1"
+bs.all$ClimSite[bs.all$ClimSite=="Chicken Ranch Gulch"]="NOAA"
+bs.all$ClimSite[bs.all$ClimSite=="Rollin's Pass"]="C1"
+
 #spring and summer year
-match1= match(bs.all$Year, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring"),"Year"])
-bs.all$Tspr.min.C1= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.mean.C1= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.max.C1= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$SiteYr= paste(bs.all$ClimSite, bs.all$Year, sep="_")
+bs.all$SiteYrPrev= paste(bs.all$ClimSite, bs.all$Year-1, sep="_")
 
-bs.all$Tspr.min.C1.anom= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.mean.C1.anom= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.max.C1.anom= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+match1= match(bs.all$SiteYr, clim.seas[which(clim.seas$Seas=="spring"),"SiteYr"])
+bs.all$Tspr.min= clim.seas$Min[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max= clim.seas$Max[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean= clim.seas$Mean[which(clim.seas$Seas=="spring")][match1]
 
-match1= match(bs.all$Year, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer"),"Year"])
-bs.all$Tsum.min.C1= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.mean.C1= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.max.C1= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tspr.min.anom= clim.seas$Min.anom[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.anom= clim.seas$Max.anom[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.anom= clim.seas$Mean.anom[which(clim.seas$Seas=="spring")][match1]
 
-bs.all$Tsum.min.C1.anom= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.mean.C1.anom= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.max.C1.anom= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+match1= match(bs.all$SiteYr, clim.seas[which(clim.seas$Seas=="summer"),"SiteYr"])
+bs.all$Tsum.min= clim.seas$Min[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max= clim.seas$Max[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean= clim.seas$Mean[which(clim.seas$Seas=="summer")][match1]
+
+bs.all$Tsum.min.anom= clim.seas$Min.anom[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.anom= clim.seas$Max.anom[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.anom= clim.seas$Mean.anom[which(clim.seas$Seas=="summer")][match1]
 
 #spring and summer year before
-match1= match(bs.all$Year-1, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring"),"Year"])
-bs.all$Tspr.min.C1.prev= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.mean.C1.prev= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.max.C1.prev= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+match1= match(bs.all$SiteYrPrev, clim.seas[which(clim.seas$Seas=="spring"),"SiteYr"])
+bs.all$Tspr.min.prev= clim.seas$Min[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.prev= clim.seas$Max[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.prev= clim.seas$Mean[which(clim.seas$Seas=="spring")][match1]
 
-bs.all$Tspr.min.C1.anom.prev= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.mean.C1.anom.prev= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
-bs.all$Tspr.max.C1.anom.prev= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.min.anom.prev= clim.seas$Min.anom[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.max.anom.prev= clim.seas$Max.anom[which(clim.seas$Seas=="spring")][match1]
+bs.all$Tspr.mean.anom.prev= clim.seas$Mean.anom[which(clim.seas$Seas=="spring")][match1]
 
-match1= match(bs.all$Year-1, clim.seas[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer"),"Year"])
-bs.all$Tsum.min.C1.prev= clim.seas$Min[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.mean.C1.prev= clim.seas$Mean[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.max.C1.prev= clim.seas$Max[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+match1= match(bs.all$SiteYrPrev, clim.seas[which(clim.seas$Seas=="summer"),"SiteYr"])
+bs.all$Tsum.min.prev= clim.seas$Min[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.prev= clim.seas$Max[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.prev= clim.seas$Mean[which(clim.seas$Seas=="summer")][match1]
 
-bs.all$Tsum.min.C1.anom.prev= clim.seas$Min.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.mean.C1.anom.prev= clim.seas$Mean.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
-bs.all$Tsum.max.C1.anom.prev= clim.seas$Max.anom[which(clim.seas$Site=="C1" & clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.min.anom.prev= clim.seas$Min.anom[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.max.anom.prev= clim.seas$Max.anom[which(clim.seas$Seas=="summer")][match1]
+bs.all$Tsum.mean.anom.prev= clim.seas$Mean.anom[which(clim.seas$Seas=="summer")][match1]
 
 #add temp 4 weeks before specimen date
 clim.month <- clim %>%
@@ -474,32 +561,74 @@ clim.month <- clim %>%
                 max_28d = zoo::rollmean(Max, k = 28, fill = NA)   )
 clim.month= as.data.frame(clim.month)
 
+#-----------------
+
+#add collection date
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
+mus1= read.csv("AlexanderSpecimens2021.csv")
+
+#match bs to museum code
+mus1$Barcode= mus1$SpecimenCode
+mus1$Barcode= as.numeric(sub("UCMC ", "", mus1$Barcode))
+bs.all$Barcode= as.numeric(bs.all$Barcode)
+
+#match
+match1= match(bs.all$Barcode, mus1$Barcode)
+matched= which(!is.na(match1))
+bs.all$DateCollected[matched]= mus1$DateCollected[na.omit(match1)]
+
+dates= as.data.frame(str_split(bs.all$DateCollected, "/", simplify = TRUE))
+colnames(dates)= c("month","day","year")
+dates$month= as.numeric(dates$month)
+dates$day= as.numeric(dates$day)
+dates$year= as.numeric(dates$year)
+dates$year[which(dates$year>20)]<- dates$year[which(dates$year>20)]+1900
+dates$year[which(dates$year<20)]<- dates$year[which(dates$year<20)]+2000
+bs.all$month= dates$month
+bs.all$day= dates$day
+bs.all$year= dates$year
+bs.all$timeperiod="current"
+bs.all$timeperiod[bs.all$Year<1990]="historic"
+
+tmp <- as.Date(paste(bs.all$day, bs.all$month, bs.all$year, sep="/"), format = "%d/%m/%Y")
+bs.all$doy_spec= as.numeric(format(tmp, "%j"))
+
+#----------------
 #add temp 4 weeks before specimen date
-clim.month$YearDoy= paste(clim.month$Year, clim.month$Julian, sep="")
+clim.month$YearDoySite= paste(clim.month$Year, clim.month$Julian, clim.month$Site, sep="")
+bs.all$YearDoySite= paste(bs.all$Year, bs.all$doy_spec, bs.all$ClimSite, sep="")
 
-match1= match(bs.all$yeardoy, clim.month[which(clim.month$Site=="C1"),"YearDoy"])
-bs.all$tmin_28d.C1= NA
-bs.all$tmean_28d.C1= NA
-bs.all$tmax_28d.C1= NA
+match1= match(bs.all$YearDoySite, clim.month$YearDoySite)
+bs.all$tmin_28d= NA
+bs.all$tmean_28d= NA
+bs.all$tmax_28d= NA
 
-bs.all$tmin_28d.C1[which(!is.na(match1))]= clim.month[na.omit(match1), "min_28d"]
-bs.all$tmean_28d.C1[which(!is.na(match1))]= clim.month[na.omit(match1), "mean_28d"]
-bs.all$tmax_28d.C1[which(!is.na(match1))]= clim.month[na.omit(match1), "max_28d"]
+bs.all$tmin_28d[which(!is.na(match1))]= clim.month[na.omit(match1), "min_28d"]
+bs.all$tmean_28d[which(!is.na(match1))]= clim.month[na.omit(match1), "mean_28d"]
+bs.all$tmax_28d[which(!is.na(match1))]= clim.month[na.omit(match1), "max_28d"]
 
 #make into anomally
 clim.sum= ddply(bs.all, c("Species", "elev"), summarise,
-                tmin_28d.C1.anom = mean(tmin_28d.C1, na.rm=TRUE), 
-                tmean_28d.C1.anom = mean(tmean_28d.C1, na.rm=TRUE),
-                tmax_28d.C1.anom = mean(tmax_28d.C1, na.rm=TRUE) )
+                tmin_28d.anom = mean(tmin_28d, na.rm=TRUE), 
+                tmean_28d.anom = mean(tmean_28d, na.rm=TRUE),
+                tmax_28d.anom = mean(tmax_28d, na.rm=TRUE) )
 clim.sum$SpElev= paste(clim.sum$Species, clim.sum$elev, sep="")
+bs.all$SpElev= paste(bs.all$Species, bs.all$elev, sep="")
 
 match1= match(bs.all$SpElev, clim.sum$SpElev)
-bs.all$tmin_28d.C1.anom= bs.all$tmin_28d.C1 - clim.sum$tmin_28d.C1.anom[match1]
-bs.all$tmean_28d.C1.anom= bs.all$tmean_28d.C1 - clim.sum$tmean_28d.C1.anom[match1]
-bs.all$tmax_28d.C1.anom= bs.all$tmax_28d.C1 - clim.sum$tmax_28d.C1.anom[match1]
+bs.all$tmin_28d.anom= bs.all$tmin_28d - clim.sum$tmin_28d.anom[match1]
+bs.all$tmean_28d.anom= bs.all$tmean_28d - clim.sum$tmean_28d.anom[match1]
+bs.all$tmax_28d.anom= bs.all$tmax_28d - clim.sum$tmax_28d.anom[match1]
 
-#----
+#--------------
 
 #save data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
-write.csv(bs.all, "BodySize_wClim_plusWS.csv" )
+write.csv(bs.all, "BodySize_wClim_plusNiwot.csv" )
+
+
+
+
+
+
+
