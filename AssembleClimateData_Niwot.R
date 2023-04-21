@@ -25,7 +25,7 @@ bs.all$Year[which(bs.all$Year==1060)]<- 1960
 #----------
 #body size anomally
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
-bs.size.m= aggregate(bs.all[,c("SpecElevSex","Mean_Femur")], list(bs.all$SpecElevSex), FUN=mean)
+bs.size.m= aggregate(bs.all[bs.all$Year %in% 1950:1980,c("SpecElevSex","Mean_Femur")], list(bs.all$SpecElevSex[bs.all$Year %in% 1950:1980]), FUN=mean)
 names(bs.size.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.size.m$SpecElevSex)
 bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]
@@ -625,7 +625,7 @@ bs.all$tmax_28d.anom= bs.all$tmax_28d - clim.sum$tmax_28d.anom[match1]
 #save data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 write.csv(bs.all, "BodySize_wClim_plusNiwot.csv" )
-
+write.csv(clim.seas, "NiwotSeasClimFilled.csv" )
 
 
 

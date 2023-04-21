@@ -8,10 +8,11 @@ library(sjPlot)
 library(plyr)
 #library(MuMIn)
 
-#try out weather station temperature data
-
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
+
+#drop NAs to compare models
+#bs.all= bs.all[which(!is.na(bs.all$tmin_28d)),]
 
 env.vars= c(
   "Tspr.min","Tspr.max","Tspr.mean","Tspr.min.anom","Tspr.max.anom","Tspr.mean.anom","Tsum.min",
@@ -69,6 +70,9 @@ mod.aic[env.ind,4]= AIC(mod.lmer.noelev)
 #find minimum AIC
 mod.aic[order(mod.aic[1:24,"V3"]),]
 mod.aic[order(mod.aic[1:24,"V4"]),]
+#For subset of data, season average better predictor than prior month
+#mod.aic[order(mod.aic[,"V3"]),]
+#mod.aic[order(mod.aic[,"V4"]),]
 
 anova(mod.lmer)
 summary(mod.lmer)$coefficients

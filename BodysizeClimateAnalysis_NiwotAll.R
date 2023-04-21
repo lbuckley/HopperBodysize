@@ -6,101 +6,12 @@ library(patchwork)
 library(ggplot2)
 library(sjPlot)
 library(plyr)
+library(see)
+library(coefplot2)
 #library(MuMIn)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
-
-#violin plot for anomaly
-bs.all$SexTime= paste(bs.all$Sex, bs.all$time, sep="")
-bs.all$group= paste(bs.all$Species, bs.all$elev, bs.all$Sex, bs.all$time, sep="")
-dodge <- position_dodge(width = 100)
-jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
-
-bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
-
-vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=time, fill=time)) +
-  facet_wrap(Species~., scales="free")+
-  geom_point(position=jdodge, aes(shape=Sex))+
-  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
-  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
-  geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
-  theme_modern()+
-  scale_fill_manual(values= c("darkorange","cadetblue"))+
-  scale_color_manual(values= c("darkorange","cadetblue"))+
-  scale_shape_manual(values=c(21,24,25))+
-  xlab("Elevation (m)")+
-  ylab("Femur length anomally (mm)")
-
-#add mean and se
-bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
-              N    = length(Femur.anom),
-              mean = mean(Femur.anom),
-              sd   = sd(Femur.anom) )
-bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
-
-vplot= vplot + 
- geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
- geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
-
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("Size_by_ElevTime_violin_anomally.pdf",height = 12, width = 12)
-vplot
-dev.off()
-
-#----------
-#add mean and se
-bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
-bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summarise,
-                  N    = length(Mean_Femur),
-                  mean = mean(Mean_Femur),
-                  std   = sd(Mean_Femur),
-                  mean.anom = mean(Femur.anom),
-                  std.anom   = sd(Femur.anom),
-                  Tspr.anom = mean(Tspr.mean.anom),
-                  Tsum.anom.prev = mean(Tsum.mean.anom.prev)  #, springdd.anom = mean(springdd.anom)
-                  )
-bs.all.sum$se= bs.all.sum$std / sqrt(bs.all.sum$N)
-bs.all.sum$se.anom= bs.all.sum$std.anom / sqrt(bs.all.sum$N)
-
-bs.all.sum$Species= factor(bs.all.sum$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
-
-bs.all.sum$time="historic"
-bs.all.sum$time[which(as.numeric(bs.all.sum$Year)>2000)]<-"current"
-bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="") 
-bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
-
-#PLOT
-#make historic data hollow #also sd.anom, Tspr.anom, Tsum.anom, springdd.anom
-plot.Tspr=ggplot(data=bs.all.sum, aes(x=Tspr.anom, y = mean, group= SexElev, color=factor(elev)) )+
-  facet_wrap(Species~., scales="free")+
-  geom_point(size=3, aes(shape=Sex, fill=factor(ifelse(time=="historic", NA, elev)) ))+ #size= sd.anom, 
-  theme_bw()+ geom_smooth(method="lm", se=FALSE) +
-  geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  scale_shape_manual(values = c(21,24,25))+
-  scale_fill_viridis_d(na.value=NA, guide="none")+
-  scale_color_viridis_d()+
-  #scale_color_brewer(palette = "Spectral") +
-  xlab("Temperature anomaly (C)") +ylab("Femur size (mm)")
-#+ scale_y_continuous(trans='log')
-
-#previous summer
-plot.Tsum=ggplot(data=bs.all.sum, aes(x=Tsum.anom.prev, y = mean, group= SexElev, color=factor(elev)) )+
-  facet_wrap(Species~., scales="free")+
-  geom_point(size=3, aes(shape=Sex, fill=factor(ifelse(time=="historic", NA, elev)) ))+ #size= sd.anom, 
-  theme_bw()+ geom_smooth(method="lm", se=FALSE) +
-  geom_errorbar( aes(ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  scale_shape_manual(values = c(21,24,25))+
-  scale_fill_viridis_d(na.value=NA, guide="none")+
-  scale_color_viridis_d()+
-  #scale_color_brewer(palette = "Spectral") +
-  xlab("Temperature anomaly (C)") +ylab("Femur size (mm)")
-
-
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("ModPlots_clim_time.pdf",height = 8, width = 8)
-plot.Tspr
-dev.off()
 
 #---------------------------
 #analysis
@@ -113,6 +24,7 @@ bs.sub1= na.omit(bs.sub1)
 
 bs.scaled <- transform(bs.sub1,
                        Tspr_cs=scale(Tspr.mean),
+                       Tsum_cs=scale(Tsum.mean.prev),
                        elev_cs=scale(elev),
                        Tspr.anom_cs=scale(Tspr.mean.anom),
                        Tsum.anom_cs=scale(Tsum.mean.anom.prev) #, springdd.anom_cs=scale(springdd.anom),
@@ -125,81 +37,64 @@ bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","
 #make elevation ordered factor
 #bs.scaled$elev_cs= factor(bs.scaled$elev_cs, ordered=TRUE )
 
+#--------------
 #time model
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE,
-                 na.action = 'na.omit', data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
+                 na.action = 'na.omit', data = bs.scaled) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
 
-#drop elevation
-mod.lmer <- lmer(Femur.anom~time*Sex*Species +
-                   (1|Year/Sites),
-                 REML = FALSE,
-                 na.action = 'na.omit', data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
-
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time","Sex", "Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time"), show.data=TRUE)
+anova(mod.lmer)
+plot_model(mod.lmer, show.values = TRUE)
+plot_model(mod.lmer, type = "slope", rm.terms = "Sex")
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
 
+#--------------
 #time + climate model 
-bs.scaled$env.var= bs.scaled$Tspr.anom_cs
-#bs.scaled$env.var= bs.scaled$Tsum.anom_cs
-
-mod.lmer <- lmer(Femur.anom~env.var*elev_cs*time*Sex*Species +
-                   (1|Year/Sites),
-                 REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
 
 #spring temp and previous summer temp
+#current using temp anomally
 mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
-#plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","time", "Species"), show.data=TRUE)
-#plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time", "Species"), show.data=TRUE)
-#plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","time","Sex"), show.data=TRUE)
-
-#drop elevation
-mod.lmer <- lmer(Femur.anom~env.var*time*Sex*Species +
-                   (1|Year/Sites),
-                 REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]) 
-
-AIC(mod.lmer)
-
-# #limited model with sex
-# mod.lmer <- lmer(Femur.anom~env.var+time +
-#                    time:elev_cs +time:Sex +time:elev_cs:Sex+ 
-#                    env.var:elev_cs +env.var:Sex +env.var:elev_cs:Sex+
-#                    env.var:Species+time:Species +
-#                    time:elev_cs:Species +time:Sex:Species +time:elev_cs:Sex:Species+ 
-#                    env.var:elev_cs:Species +env.var:Sex:Species +env.var:elev_cs:Sex:Species+
-#                    (1|Year/Sites),
-#                  REML = FALSE, na.action = 'na.fail', 
-#                  data = bs.scaled)  #drop [-which(bs.scaled$Species=="X. corallipes"),]?
-
-#split by Sex?
-#size in a year: determined by time period (vary by elevation, Sex, species), climate, 
+                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
 anova(mod.lmer)
 summary(mod.lmer)$coefficients
 summary(mod.lmer)$AICtab
 coef(mod.lmer)
+plot_model(mod.lmer, type = "slope")
 
+mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Species"), show.data=TRUE)
+
+plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
+
+#OR just current data?
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled[bs.scaled$time=="current",] )
+
+plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","Tspr.anom_cs","Species"), show.data=TRUE)
+
+#--------
+#Other plots
+#https://lmudge13.github.io/sample_code/mixed_effects.html
+tab_model(mod.lmer)
+
+plot_model(mod.lmer, show.values = TRUE)
 plot_model(mod.lmer, type = "re")
 plot_model(mod.lmer, type = "slope")
 plot_model(mod.lmer, type = "resid")
 plot_model(mod.lmer, type = "diag")
-
-plot_model(mod.lmer, type = "pred", terms = c("env.var","time"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("env.var","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("env.var","elev_cs","time"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("env.var","elev_cs","time", "Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("env.var","time", "Sex", "Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "int")
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
-plot_model(mod.lmer, type = "pred", terms = c("env.var", "elev_cs","Species","Sex"), show.data=TRUE)
+mod.fig
 dev.off()
 
 #============================
@@ -227,11 +122,6 @@ modplots <- vector('list', length(specs))
 slopeplots <- vector('list', length(specs))
 
 for(spec.k in 1:length(specs)){
-  
-  # mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex +
-  #                    (1|Year/Sites),
-  #                  REML = FALSE, na.action = 'na.fail', 
-  #                  data = bs.sub1[which(bs.sub1$Species==specs[spec.k]),]) 
   
   mod.lmer <- lmer(Femur.anom~time*elev_cs+Sex +
                      (1|Year/Sites),
@@ -275,7 +165,7 @@ dev.off()
 #ANOVA output
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 
-mod.lmer <- lmer(Femur.anom~ time*elev_cs+env.var+env.var:elev_cs+Sex + #env.var*elev_cs+Sex+time 
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex + 
                    (1|Year/Sites),
                    REML = FALSE,
                    na.action = 'na.omit',
@@ -308,13 +198,18 @@ slopeplots.env <- vector('list', length(specs))
 #                                  REML = FALSE,
 #                                  na.action = 'na.omit',
 #                    data = bs.scaled[which(bs.scaled$Species==specs[spec.k] & bs.scaled$Sex=="F"),])
+#mod.lmer <- lmer(Femur.anom~ time*elev_cs+env.var+env.var:elev_cs+Sex + 
+#                   (1|Year/Sites),
+#                 REML = FALSE,
+#                 na.action = 'na.omit',
+#                 data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
+
+env.k=1
 
 for(spec.k in 1:length(specs)){
-  for (env.k in 1:2){
-    if(env.k==1) bs.scaled$env.var= bs.scaled$Tspr.anom_cs
-    if(env.k==2) bs.scaled$env.var= bs.scaled$Tsum.anom_cs
    
-  mod.lmer <- lmer(Femur.anom~time*elev_cs+env.var+env.var:elev_cs+Sex +(1|Year/Sites),
+  mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex + 
+                   (1|Year/Sites),
                      REML = FALSE,
                      na.action = 'na.omit',
                      data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
@@ -325,7 +220,6 @@ for(spec.k in 1:length(specs)){
   BICs.env[spec.k,env.k]= BIC(mod.lmer)
   
   #plot output
-  if(env.k==1){
   message(spec.k)
   modplots.env[[spec.k]] <- local({
     spec.k <- spec.k
@@ -335,7 +229,7 @@ for(spec.k in 1:length(specs)){
   
   modplots.env1[[spec.k]] <- local({
     spec.k <- spec.k
-    p1 <- plot_model(mod.lmer, type="pred",terms=c("env.var","elev_cs"), show.data=TRUE, title=specs[spec.k])
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("Tspr.anom_cs","elev_cs"), show.data=TRUE, title=specs[spec.k])
     print(p1)
   })
   
@@ -344,10 +238,7 @@ for(spec.k in 1:length(specs)){
     p1 <- plot_model(mod.lmer, type="slope", title=specs[spec.k])
     print(p1)
   })
-  } #check env
   
-  
-  } #end loop envi var
 } #end loop specs 
 
 #save figure
@@ -366,7 +257,7 @@ pdf("ModPlots_clim.pdf",height = 12, width = 12)
 (modplots[[1]] | modplots[[4]]) / (modplots[[2]] | modplots[[5]]) / (modplots[[3]] | modplots[[6]])
 dev.off()
 
-pdf("SlopePlots_clim.pdf",height = 25, width = 6)
+pdf("SlopePlots_clim.pdf",height = 12, width = 12)
   (slopeplots[[1]] | slopeplots.env[[1]])/
   (slopeplots[[2]] | slopeplots.env[[2]])/
   (slopeplots[[3]] | slopeplots.env[[3]])/
@@ -433,16 +324,3 @@ write.csv(BIC.all, "ModBIC.csv")
 #temp*time*sex: simplex
 
 #-------
-#Model selection across climate variables
-#https://doi.org/10.1002/ecy.3336
-#try LASSO?
-
-spec.k=6
-
-bs.scaled$envvar= bs.scaled$Tspr.anom_cs
-#bs.scaled$envvar= bs.scaled$Tsum.anom.prev_cs
-#bs.scaled$envvar= bs.scaled$t28.anom_cs
-
-ggplot(data=bs.scaled[which(bs.scaled$Species==specs[spec.k]),], 
-       aes(x=envvar, y = Femur.anom, color=elev)) +
-         geom_point()+geom_smooth(method="lm")

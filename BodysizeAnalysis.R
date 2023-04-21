@@ -183,6 +183,9 @@ bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768) 
 #store data from focal elevations even if no match
 bs.unmatched= bs.sub
 
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+write.csv(bs.unmatched, "BodySize_unmatched.csv" )
+
 ##drop data without historic , current match
 # A. clavatus sunshine, chicken ranch gulch
 bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042,2317) ),]
