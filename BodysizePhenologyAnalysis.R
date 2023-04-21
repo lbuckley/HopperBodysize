@@ -3,7 +3,7 @@ library(stringr)
 #relate to phenology
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
-bs.all= read.csv("BodySize_wClim.csv")
+bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
 dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
@@ -172,17 +172,18 @@ dev.off()
 
 #estimate anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
-bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec","springdd","Tspr","Tsum","dd_collect")], list(bs.all$SpecElevSex), FUN=mean, na.rm=TRUE)
+bs.all$SexElev= paste(bs.all$Sex, bs.all$elev, sep="")
+bs.doy.m= aggregate(bs.all[,c("SpecElevSex","doy_spec","Tspr.mean.anom","Tsum.mean.anom.prev")], list(bs.all$SpecElevSex), FUN=mean, na.rm=TRUE)
 names(bs.doy.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.doy.m$SpecElevSex)
 bs.all$doy.anom= bs.all$doy_spec - bs.doy.m$doy_spec[match1]
-bs.all$dd.anom= bs.all$dd_collect - bs.doy.m$dd_collect[match1]
+#bs.all$dd.anom= bs.all$dd_collect - bs.doy.m$dd_collect[match1]
 
 #order by seasonal timing
 bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
 #plot doy vs size 
-plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
+plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Femur.anom, color=factor(elev), shape=Sex, group=SexElev))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
@@ -190,12 +191,12 @@ plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Mean_Femur, color=factor(el
   scale_color_viridis_d()
 #group by year?
 
-plot.gdd.size= ggplot(data=bs.all, aes(x=dd.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
-  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  facet_wrap(Species~., scales="free")+
-  theme(legend.position = "bottom")+
-  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
-  scale_color_viridis_d()
+# plot.gdd.size= ggplot(data=bs.all, aes(x=dd.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
+#   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+#   facet_wrap(Species~., scales="free")+
+#   theme(legend.position = "bottom")+
+#   xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
+#   scale_color_viridis_d()
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("SizeDoy_museum.pdf",height = 10, width = 12)
@@ -214,7 +215,7 @@ mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
-mod.lmer <- lmer(Femur.anom~doy.anom*Tspr.anom*elev_cs*Sex*Species+
+mod.lmer <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
