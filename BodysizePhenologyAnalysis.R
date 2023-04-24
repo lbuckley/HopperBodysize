@@ -13,6 +13,8 @@ dat= dat.all[duplicated(dat.all$spsiteyear)==FALSE, c("species","year","site","s
 
 #match to body size data
 bs.sub= bs.all
+
+specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
 gp= c("Eritettix simplex","Xanthippus corallipes","Aeropedellus clavatus","Melanoplus boulderensis","Camnula pellucida","Melanoplus sanguinipes")
 bs.sub$gp= gp[match(bs.sub$Species, specs)]
 bs.sub$spsiteyear= paste(bs.sub$Sites,bs.sub$Year,bs.sub$gp,sep="")
@@ -115,59 +117,6 @@ pdf("SizeByPhenology_Diff.pdf",height = 6, width = 12)
 plot.doy.diff + plot.gdd.diff
 dev.off()
 
-#----------------------------
-
-# #analysis with C1 data
-# fdir= "/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/"
-# 
-# #load climate data
-# setwd( paste(fdir, "climate", sep="") )   
-# clim= read.csv("AlexanderClimateAll_filled_May2022.csv")
-# sort(unique(clim$Year))
-# # add years: 1931, 1941, 1947, 1948, 1949, 1950, 2022
-# clim.all= read.csv("AlexanderClimateAll.csv")
-# sort(unique(clim.all$Year))
-# inds= which(clim.all$Year %in% c(1961, 1962, 1963, 1964, 1979, 1981) )
-# clim.add= clim.all[inds,]
-# clim.add$sjy= paste(clim.add$Site, clim.add$Julian, clim.add$Year, sep="_")
-# 
-# clim.bind= clim[1:nrow(clim.add),]
-# clim.bind[]=NA
-# clim.bind[,c("Site","Julian","Year","Max","Min","Mean","sjy")]= clim.add[,c("Site","Julian","Year","Max","Min","Mean","sjy")]
-# clim.all= rbind(clim, clim.bind)
-# 
-# #cummulative degree days
-# #cumsum within groups
-# clim.sum = clim.all %>% group_by(Year,Site) %>% arrange(Julian) %>% mutate(cdd_sum = cumsum(dd_sum),cdd_june = cumsum(dd_june),cdd_july = cumsum(dd_july),cdd_aug = cumsum(dd_aug),cdd_early = cumsum(dd_early),cdd_mid = cumsum(dd_mid),cdd_ac = cumsum(dd_ac),cdd_mb = cumsum(dd_mb),cdd_ms = cumsum(dd_ms) ) 
-# 
-# #rough spring (May + June) averages
-# clim.ave= clim.all[which(clim.all$Julian %in% 121:181),]
-# clim.ave= aggregate(clim.ave[,c("Julian","Max","Mean")], list(clim.ave$Site, clim.ave$Year), FUN="mean", na.rm=TRUE)
-# names(clim.ave)[1:2]=c("Site","Year")
-# #use C1
-# clim.ave= clim.ave[which(clim.ave$Site=="C1"),]
-# 
-# #add clim C1 to bs.all
-# match1= match(bs.all$Year, clim.ave$Year)
-# matched= which(!is.na(match1))
-# 
-# bs.all$MeanC1[matched]= clim.ave$Mean[match1[matched]] 
-
-#------------------------
-# #load yearly data
-# setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/DataForAnalysis/climate/")
-# clim.yr= read.csv("AlexanderYearlyClimate.csv")
-# 
-# #match climate data
-# match1= match(bs.all$year, clim.yr$year)
-# matched= which(!is.na(match1))
-# 
-# bs.all$MeanClim[matched]= clim.yr$Mean[match1[matched]] 
-# bs.all$dd[matched]= clim.yr$dd[match1[matched]] 
-# bs.all$dd_early[matched]= clim.yr$dd_early[match1[matched]] 
-# bs.all$SpringPre[matched]= clim.yr$SpringPre[match1[matched]] 
-# bs.all$SpringSnow[matched]= clim.yr$SpringSnow[match1[matched]] 
-
 #========================================
 
 #estimate anomaly
@@ -210,7 +159,7 @@ bs.scaled <- transform(bs.all,
 )
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
-mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
+mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species*time + #include time?
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
@@ -220,17 +169,8 @@ mod.lmer <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
-plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Sex","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Species"), show.data=TRUE)
 #plot_model(mod.lmer, type = "pred", terms = c("doy.anom","Tspr.anom"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Sex"), show.data=TRUE)
-
-mod.lmer <- lmer(Femur.anom~dd.anom*elev_cs*Sex*Species + #include time?
-                   (1|Year/Sites),
-                 REML = FALSE,
-                 na.action = 'na.omit', data = bs.scaled)
-
-plot_model(mod.lmer, type = "pred", terms = c("dd.anom","elev_cs","Sex","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "slope")
 anova(mod.lmer)
 
 #-------
@@ -294,7 +234,6 @@ setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySi
 write.csv(lmer.sig, "ModSig_phenology.csv")
 
 #add gdd anomalies
-
 
 
 

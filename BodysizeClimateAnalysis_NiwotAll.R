@@ -53,7 +53,7 @@ plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show
 #time + climate model 
 
 #spring temp and previous summer temp
-#current using temp anomally
+#currently using temp anomally
 mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
@@ -68,6 +68,10 @@ plot_model(mod.lmer, type = "slope")
 mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Species"), show.data=TRUE)
 
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs"), show.data=TRUE)
+# At higher elevations: body size increases with warmer spring temperatures after cold summers but decreases after warm summers
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
+
 plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
 
@@ -79,6 +83,15 @@ mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*Sex*Species +
 
 plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","Tspr.anom_cs","Species"), show.data=TRUE)
+
+#just climate
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*Species +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
 
 #--------
 #Other plots
