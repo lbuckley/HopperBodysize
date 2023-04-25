@@ -621,7 +621,59 @@ bs.all$tmean_28d.anom= bs.all$tmean_28d - clim.sum$tmean_28d.anom[match1]
 bs.all$tmax_28d.anom= bs.all$tmax_28d - clim.sum$tmax_28d.anom[match1]
 
 #--------------
+#Add month data before phenology
+#simplex: doy 141, apr-may
+#corallipes: doy 163, may - june
+#clavatus: 178, may-june
+#boulderensis: 178, may-june
+#pellucida, 211, june - july
+#sanguinipes, 221, july - aug
 
+specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
+months= c("4-5", "5-6", "5-6", "5-6", "6-7", "7-8")
+
+
+#spring means, doy 60-151:
+clim.simp= aggregate(clim[which(clim$Julian %in% 111:141),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 111:141)], clim$Year[which(clim$Julian %in% 111:141)]), FUN=mean)
+clim.cora= aggregate(clim[which(clim$Julian %in% 133:163),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 133:163)], clim$Year[which(clim$Julian %in% 133:163)]), FUN=mean)
+clim.clav= aggregate(clim[which(clim$Julian %in% 148:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 148:178)], clim$Year[which(clim$Julian %in% 148:178)]), FUN=mean)
+clim.boul= aggregate(clim[which(clim$Julian %in% 148:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 148:178)], clim$Year[which(clim$Julian %in% 148:178)]), FUN=mean)
+clim.pell= aggregate(clim[which(clim$Julian %in% 181:211),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 181:211)], clim$Year[which(clim$Julian %in% 181:211)]), FUN=mean)
+clim.sang= aggregate(clim[which(clim$Julian %in% 191:221),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 191:221)], clim$Year[which(clim$Julian %in% 191:221)]), FUN=mean)
+
+clim.mo= cbind(clim.simp[,c(1:2,4)],clim.cora[,4], clim.clav[,4], clim.boul[,4], clim.pell[,4], clim.sang[,4])
+colnames(clim.mo)=c("Site","Year","simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")
+clim.mo$SiteYr= paste(clim.mo$Site, clim.mo$Year, sep="_")
+
+##CHECK NAs
+bs.all$Mean.mo= NA
+
+inds= which(bs.all$Species=="E. simplex")
+match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
+matched= which(!is.na(match1))
+bs.all$Mean.mo[inds[matched]]= clim.mo$simp.mean[match1[matched]]
+inds= which(bs.all$Species=="X. corallipes")
+match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
+matched= which(!is.na(match1))
+bs.all$Mean.mo[inds[matched]]= clim.mo$cora.mean[match1[matched]]
+inds= which(bs.all$Species=="A. clavatus")
+match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
+matched= which(!is.na(match1))
+bs.all$Mean.mo[inds[matched]]= clim.mo$clav.mean[match1[matched]]
+inds= which(bs.all$Species=="M. boulderensis")
+match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
+matched= which(!is.na(match1))
+bs.all$Mean.mo[inds[matched]]= clim.mo$boul.mean[match1[matched]]
+inds= which(bs.all$Species=="C. pellucida")
+match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
+matched= which(!is.na(match1))
+bs.all$Mean.mo[inds[matched]]= clim.mo$pell.mean[match1[matched]]
+inds= which(bs.all$Species=="M. sanguinipes")
+match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
+matched= which(!is.na(match1))
+bs.all$Mean.mo[inds[matched]]= clim.mo$sang.mean[match1[matched]]
+
+#--------------
 #save data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 write.csv(bs.all, "BodySize_wClim_plusNiwot.csv" )

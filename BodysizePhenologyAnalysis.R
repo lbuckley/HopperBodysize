@@ -49,6 +49,7 @@ names(bs.doy.m)[1]<-"SpecElevSex"
 match1= match(bs1$SpecElevSex, bs.doy.m$SpecElevSex)
 bs1$doy.anom= bs1$doy_adult - bs.doy.m$doy_adult[match1]
 bs1$gdd.anom= bs1$gdd_adult - bs.doy.m$gdd_adult[match1]
+bs1$Species= factor(bs1$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
 #plot body size means per year
 agg.size.yr= aggregate(bs1[,c("Mean_Femur","doy_adult","gdd_adult","Femur.anom","doy.anom","gdd.anom")], by=list(bs1$Species, bs1$Sites, bs1$Year, bs1$elev, bs1$time), FUN="mean", na.rm = TRUE)
@@ -106,6 +107,9 @@ plot.gdd.diff= ggplot(data=agg.size.yr, aes(x=gdd_adult_diff, y=Mean_Femur_diff,
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   theme(legend.position = "bottom")+
   xlab("Delta GDDs at adulthood")+ ylab("Delta Femur length (mm)")
+
+#estimate mean phenology
+agg.size2= aggregate(bs1[,c("Mean_Femur","doy_adult")], by=list(bs1$Species), FUN="mean", na.rm = TRUE)
 
 #-------------------
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")

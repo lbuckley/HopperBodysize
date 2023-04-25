@@ -18,7 +18,7 @@ bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 
 #combined model
 bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites",
-                   "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev")] 
+                   "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev","Mean.mo")] 
 bs.sub1= na.omit(bs.sub1)
 #check drops
 
@@ -27,7 +27,9 @@ bs.scaled <- transform(bs.sub1,
                        Tsum_cs=scale(Tsum.mean.prev),
                        elev_cs=scale(elev),
                        Tspr.anom_cs=scale(Tspr.mean.anom),
-                       Tsum.anom_cs=scale(Tsum.mean.anom.prev) #, springdd.anom_cs=scale(springdd.anom),
+                       Tsum.anom_cs=scale(Tsum.mean.anom.prev),
+                       Mean.mo_cs=scale(Mean.mo)
+                       #, springdd.anom_cs=scale(springdd.anom),
                        #t28d_cs= scale(t_28d),
                        #t28.anom_cs= scale(t28.anom),
 )
@@ -58,6 +60,13 @@ mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+
+#species month
+mod.lmer <- lmer(Femur.anom~Mean.mo_cs*elev_cs*time*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+plot_model(mod.lmer, type = "pred", terms = c("Mean.mo_cs","elev_cs","time","Species"), show.data=TRUE)
 
 anova(mod.lmer)
 summary(mod.lmer)$coefficients
