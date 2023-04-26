@@ -633,7 +633,7 @@ specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pelluc
 months= c("4-5", "5-6", "5-6", "5-6", "6-7", "7-8")
 
 
-#spring means, doy 60-151:
+#month means:
 clim.simp= aggregate(clim[which(clim$Julian %in% 111:141),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 111:141)], clim$Year[which(clim$Julian %in% 111:141)]), FUN=mean)
 clim.cora= aggregate(clim[which(clim$Julian %in% 133:163),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 133:163)], clim$Year[which(clim$Julian %in% 133:163)]), FUN=mean)
 clim.clav= aggregate(clim[which(clim$Julian %in% 148:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 148:178)], clim$Year[which(clim$Julian %in% 148:178)]), FUN=mean)
@@ -643,9 +643,23 @@ clim.sang= aggregate(clim[which(clim$Julian %in% 191:221),c("Max","Mean","Min")]
 
 clim.mo= cbind(clim.simp[,c(1:2,4)],clim.cora[,4], clim.clav[,4], clim.boul[,4], clim.pell[,4], clim.sang[,4])
 colnames(clim.mo)=c("Site","Year","simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")
+
+#add 2012, 2013 average
+b.20125= aggregate(clim.mo[clim.mo$Year %in% 2012:2013,c("simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")], list(clim.mo[clim.mo$Year %in% 2012:2013,]$Site), FUN=mean)
+colnames(b.20125)[1]=c("Site")
+b.20125$Year= "2012.5"
+b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
+clim.mo= rbind(clim.mo, b.20125[,colnames(clim.mo)])
+
+b.20125= aggregate(clim.mo[clim.mo$Year %in% 2011:2012,c("simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")], list(clim.mo[clim.mo$Year %in% 2011:2012,]$Site), FUN=mean)
+colnames(b.20125)[1]=c("Site")
+b.20125$Year= "2011.5"
+b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
+clim.mo= rbind(clim.mo, b.20125[,colnames(clim.mo)])
+
 clim.mo$SiteYr= paste(clim.mo$Site, clim.mo$Year, sep="_")
 
-##CHECK NAs
+#add data
 bs.all$Mean.mo= NA
 
 inds= which(bs.all$Species=="E. simplex")
@@ -672,6 +686,14 @@ inds= which(bs.all$Species=="M. sanguinipes")
 match1=match( bs.all$SiteYr[inds],clim.mo$SiteYr)
 matched= which(!is.na(match1))
 bs.all$Mean.mo[inds[matched]]= clim.mo$sang.mean[match1[matched]]
+
+#make into anomally
+clim.sum= ddply(bs.all, c("Species", "elev"), summarise,
+                Tmo.anom = mean(Mean.mo, na.rm=TRUE) )
+clim.sum$SpElev= paste(clim.sum$Species, clim.sum$elev, sep="")
+
+match1= match(bs.all$SpElev, clim.sum$SpElev)
+bs.all$Tmo.anom= bs.all$Mean.mo - clim.sum$Tmo.anom[match1]
 
 #--------------
 #save data

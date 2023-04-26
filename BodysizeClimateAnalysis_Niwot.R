@@ -20,6 +20,7 @@ env.vars= c(
   "Tspr.min.prev","Tspr.max.prev","Tspr.mean.prev","Tspr.min.anom.prev", 
   "Tspr.max.anom.prev","Tspr.mean.anom.prev","Tsum.min.prev","Tsum.max.prev",      
   "Tsum.mean.prev","Tsum.min.anom.prev","Tsum.max.anom.prev","Tsum.mean.anom.prev",
+  "Mean.mo","Tmo.anom",   
   "tmin_28d","tmean_28d","tmax_28d","tmin_28d.anom", "tmean_28d.anom","tmax_28d.anom"
 )    
 
@@ -68,8 +69,9 @@ mod.aic[env.ind,4]= AIC(mod.lmer.noelev)
 
 #-----------
 #find minimum AIC
-mod.aic[order(mod.aic[1:24,"V3"]),]
-mod.aic[order(mod.aic[1:24,"V4"]),]
+mod.aic[,"V3"]
+mod.aic[order(mod.aic[1:26,"V3"]),]
+mod.aic[order(mod.aic[1:26,"V4"]),]
 #For subset of data, season average better predictor than prior month
 #mod.aic[order(mod.aic[,"V3"]),]
 #mod.aic[order(mod.aic[,"V4"]),]

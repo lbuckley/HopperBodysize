@@ -18,7 +18,7 @@ bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 
 #combined model
 bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites",
-                   "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev","Mean.mo")] 
+                   "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev","Mean.mo","Tmo.anom")] 
 bs.sub1= na.omit(bs.sub1)
 #check drops
 
@@ -28,7 +28,8 @@ bs.scaled <- transform(bs.sub1,
                        elev_cs=scale(elev),
                        Tspr.anom_cs=scale(Tspr.mean.anom),
                        Tsum.anom_cs=scale(Tsum.mean.anom.prev),
-                       Mean.mo_cs=scale(Mean.mo)
+                       Mean.mo_cs=scale(Mean.mo),
+                       Tmo.anom_cs= scale(Tmo.anom)
                        #, springdd.anom_cs=scale(springdd.anom),
                        #t28d_cs= scale(t_28d),
                        #t28.anom_cs= scale(t28.anom),
@@ -55,8 +56,8 @@ plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show
 #time + climate model 
 
 #spring temp and previous summer temp
-#currently using temp anomally
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
+#not currently using temp anomally
+mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
@@ -67,6 +68,9 @@ mod.lmer <- lmer(Femur.anom~Mean.mo_cs*elev_cs*time*Sex*Species +
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 plot_model(mod.lmer, type = "pred", terms = c("Mean.mo_cs","elev_cs","time","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Mean.mo_cs","elev_cs","Species"), show.data=TRUE)
+
+#--------------------
 
 anova(mod.lmer)
 summary(mod.lmer)$coefficients
@@ -74,33 +78,38 @@ summary(mod.lmer)$AICtab
 coef(mod.lmer)
 plot_model(mod.lmer, type = "slope")
 
-mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Species"), show.data=TRUE)
+mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tsum_cs","elev_cs","time","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","Species"), show.data=TRUE)
 
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","Tsum_cs","elev_cs"), show.data=TRUE)
 # At higher elevations: body size increases with warmer spring temperatures after cold summers but decreases after warm summers
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","Tsum_cs","elev_cs","time"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","Tsum_cs","elev_cs","Species"), show.data=TRUE)
 
-plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tsum_cs","elev_cs","time","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","Sex"), show.data=TRUE)
 
 #OR just current data?
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*Sex*Species +
+mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled[bs.scaled$time=="current",] )
 
-plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs","Tspr.anom_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tsum_cs","elev_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","Tspr_cs","Species"), show.data=TRUE)
 
 #just climate
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*Species +
+mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
+mod.lmer <- lmer(Femur.anom~Tspr_cs*elev_cs*Species +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled)
+
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","Species"), show.data=TRUE)
 
 #--------
 #Other plots
@@ -118,6 +127,8 @@ setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySi
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
 mod.fig
 dev.off()
+
+#library(remef)
 
 #============================
 #By species time
@@ -187,7 +198,7 @@ dev.off()
 #ANOVA output
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex + 
+mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex + 
                    (1|Year/Sites),
                    REML = FALSE,
                    na.action = 'na.omit',
@@ -230,14 +241,14 @@ env.k=1
 
 for(spec.k in 1:length(specs)){
    
-  mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex + 
+  mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex + 
                    (1|Year/Sites),
                      REML = FALSE,
                      na.action = 'na.omit',
                      data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
   
   stats.env[spec.k,env.k,,1:4]= as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")]
-  coefs.env[spec.k,env.k,]= fixef(mod.lmer)[2:(length(vars)+1)]
+  coefs.env[spec.k,env.k,]= fixef(mod.lmer)[2:length(coef.names)]
   AICs.env[spec.k,env.k]= AIC(mod.lmer)
   BICs.env[spec.k,env.k]= BIC(mod.lmer)
   
@@ -251,7 +262,7 @@ for(spec.k in 1:length(specs)){
   
   modplots.env1[[spec.k]] <- local({
     spec.k <- spec.k
-    p1 <- plot_model(mod.lmer, type="pred",terms=c("Tspr.anom_cs","elev_cs"), show.data=TRUE, title=specs[spec.k])
+    p1 <- plot_model(mod.lmer, type="pred",terms=c("Tspr_cs","elev_cs"), show.data=TRUE, title=specs[spec.k])
     print(p1)
   })
   

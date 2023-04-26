@@ -121,7 +121,12 @@ bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summaris
                   mean.anom = mean(Femur.anom),
                   std.anom   = sd(Femur.anom),
                   Tspr.anom = mean(Tspr.mean.anom),
-                  Tsum.anom.prev = mean(Tsum.mean.anom.prev)  #, springdd.anom = mean(springdd.anom)
+                  Tsum.anom.prev = mean(Tsum.mean.anom.prev),
+                  Tmo.anom= mean(Tmo.anom),
+                  Tspr.mean = mean(Tspr.mean),
+                  Tsum.prev = mean(Tsum.mean),
+                  Tmo= mean(Mean.mo)
+                  #, springdd.anom = mean(springdd.anom)
 )
 bs.all.sum$se= bs.all.sum$std / sqrt(bs.all.sum$N)
 bs.all.sum$se.anom= bs.all.sum$std.anom / sqrt(bs.all.sum$N)
@@ -134,15 +139,26 @@ bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="")
 bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 
 #PLOT
-bs.tplot= bs.all.sum[,c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time","Tspr.anom","Tsum.anom.prev")]
+# bs.tplot= bs.all.sum[,c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time","Tspr.anom","Tsum.anom.prev","Tmo.anom")]
+# #temp vars in long format
+# 
+# bs.tplot.long= melt(bs.tplot, na.rm = FALSE, value.name = "Temperature", id = c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time"))
+# 
+# # New facet label names
+# t.labs <- c("Spring", "Previous Summer","Month prev")
+# names(t.labs) <- c("Tspr.anom", "Tsum.anom.prev","Tmo.anom")
+
+#Mean not anomaly
+bs.tplot= bs.all.sum[,c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time","Tspr.mean","Tsum.prev","Tmo")]
 #temp vars in long format
 
 bs.tplot.long= melt(bs.tplot, na.rm = FALSE, value.name = "Temperature", id = c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time"))
 
 # New facet label names
-t.labs <- c("Spring", "Previous Summer")
-names(t.labs) <- c("Tspr.anom", "Tsum.anom.prev")
+t.labs <- c("Spring", "Previous Summer","Month prev")
+names(t.labs) <- c("Tspr.mean", "Tsum.prev","Tmo")
 
+#----------------
 plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= SexElev, color=factor(elev)) )+
   facet_grid(Species~variable, scales="free", 
              labeller = labeller(variable = t.labs))+
@@ -153,13 +169,13 @@ plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= S
   scale_fill_viridis_d(na.value=NA, guide="none")+
   scale_color_viridis_d()+
   #scale_color_brewer(palette = "Spectral") +
-  xlab("Temperature anomaly (C)") +ylab("Femur size anomally (mm)")
+  xlab("Temperature (C)") +ylab("Femur size anomally (mm)")
 #+ scale_y_continuous(trans='log')
 
-pdf("Fig3_SizeByTemp.pdf",height = 11, width = 8)
+pdf("Fig3_SizeByTemp.pdf",height = 8, width = 8)
 plot.Temps
 dev.off()
 
 #---------------------
 #Figure 4. Phenology
-
+#See PhenologyAnalysis
