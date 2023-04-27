@@ -135,6 +135,16 @@ bs.all$doy.anom= bs.all$doy_spec - bs.doy.m$doy_spec[match1]
 #order by seasonal timing
 bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
+#remove early pellucida from 2006 
+bs.all= bs.all[-which(bs.all$doy_spec<160 & bs.all$Species=="C. pellucida"),]
+
+ggplot(data=bs.all, aes(x=doy_spec, y=Femur.anom, color=factor(elev), shape=Sex, group=SexElev))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., scales="free")+
+  theme(legend.position = "bottom")+
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
+  scale_color_viridis_d()
+
 #plot doy vs size 
 plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Femur.anom, color=factor(elev), shape=Sex, group=SexElev))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
@@ -142,7 +152,6 @@ plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Femur.anom, color=factor(el
   theme(legend.position = "bottom")+
   xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
   scale_color_viridis_d()
-#group by year?
 
 # plot.gdd.size= ggplot(data=bs.all, aes(x=dd.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
 #   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
@@ -152,9 +161,38 @@ plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Femur.anom, color=factor(el
 #   scale_color_viridis_d()
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("SizeDoy_museum.pdf",height = 10, width = 12)
-plot.doy.size | plot.gdd.size
+pdf("SizeDoy_museum.pdf",height = 8, width = 10)
+plot.doy.size #| plot.gdd.size
 dev.off()
+
+#------
+#group by year?
+
+#add mean and se
+bs.phen= ddply(bs.all, c("Species", "elev", "Sites","Sex", "SexElev", "timeperiod","Year"), summarise,
+              N    = length(Mean_Femur),
+              mean.femur = mean(Mean_Femur),
+              sd.femur   = sd(Mean_Femur), 
+              mean.femur.anom = mean(Femur.anom),
+              sd.femur.anom  = sd(Femur.anom),
+              mean.doy = mean(doy_spec),
+              sd.doy   = sd(doy_spec), 
+              mean.doy.anom = mean(doy.anom),
+              sd.doy.anom  = sd(doy.anom)
+              )
+bs.phen$se.femur.anom= bs.phen$sd.femur.anom / sqrt(bs.phen$N)
+bs.phen$se.doy.anom= bs.phen$sd.doy.anom / sqrt(bs.phen$N)
+
+bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=Sex, group=SexElev))+ 
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., scales="free")+
+  theme(legend.position = "bottom")+
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
+  scale_color_viridis_d()
+
+bs.phen.yr.plot= bs.phen.yr.plot + 
+  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, ymin=mean.femur.anom-se.femur.anom, ymax=mean.femur.anom+se.femur.anom), width=0, col="black")+
+  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, xmin=mean.doy.anom-se.doy.anom, xmax=mean.doy.anom+se.doy.anom), width=0, col="black")
 
 #-------
 #analyze

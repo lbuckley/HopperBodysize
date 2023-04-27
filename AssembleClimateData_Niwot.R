@@ -349,6 +349,9 @@ ggplot(data=clim, aes(x=YrDoy, y = Max, color=Site))+
 
 #make filled data
 clim.fill= clim
+#add fleg for filled data
+clim.fill$filled=0
+clim.fill$filled[which(is.na(clim.fill$Mean))]=1
 
 #reformat to wide format for Julian, Year by Site 
 clim.min= dcast(clim, Julian +Year ~ Site, value.var="Min", fun.aggregate=mean, na.rm=TRUE)
@@ -446,13 +449,13 @@ ggplot(data=clim.fill[clim.fill$Year %in% 1980:2022,], aes(x=YrDoy, y = Mean, co
 clim= clim.fill
 
 #spring means, doy 60-151:
-clim.spr= aggregate(clim[which(clim$Julian %in% 60:151),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 60:151)], clim$Year[which(clim$Julian %in% 60:151)]), FUN=mean)
+clim.spr= aggregate(clim[which(clim$Julian %in% 60:151),c("Max","Mean","Min","filled")], list(clim$Site[which(clim$Julian %in% 60:151)], clim$Year[which(clim$Julian %in% 60:151)]), FUN=mean)
 names(clim.spr)[1:2]=c("Site","Year")
 clim.spr$Seas="spring"
 clim.spr$SiteYr= paste(clim.spr$Site, clim.spr$Year, sep="_")
 
 #summer means, doy 152-243:
-clim.sum= aggregate(clim[which(clim$Julian %in% 152:243),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 152:243)], clim$Year[which(clim$Julian %in% 152:243)]), FUN=mean)
+clim.sum= aggregate(clim[which(clim$Julian %in% 152:243),c("Max","Mean","Min","filled")], list(clim$Site[which(clim$Julian %in% 152:243)], clim$Year[which(clim$Julian %in% 152:243)]), FUN=mean)
 names(clim.sum)[1:2]=c("Site","Year")
 clim.sum$Seas="summer"
 clim.sum$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
@@ -634,12 +637,12 @@ months= c("4-5", "5-6", "5-6", "5-6", "6-7", "7-8")
 
 
 #month means:
-clim.simp= aggregate(clim[which(clim$Julian %in% 111:141),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 111:141)], clim$Year[which(clim$Julian %in% 111:141)]), FUN=mean)
-clim.cora= aggregate(clim[which(clim$Julian %in% 133:163),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 133:163)], clim$Year[which(clim$Julian %in% 133:163)]), FUN=mean)
-clim.clav= aggregate(clim[which(clim$Julian %in% 148:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 148:178)], clim$Year[which(clim$Julian %in% 148:178)]), FUN=mean)
-clim.boul= aggregate(clim[which(clim$Julian %in% 148:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 148:178)], clim$Year[which(clim$Julian %in% 148:178)]), FUN=mean)
-clim.pell= aggregate(clim[which(clim$Julian %in% 181:211),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 181:211)], clim$Year[which(clim$Julian %in% 181:211)]), FUN=mean)
-clim.sang= aggregate(clim[which(clim$Julian %in% 191:221),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 191:221)], clim$Year[which(clim$Julian %in% 191:221)]), FUN=mean)
+clim.simp= aggregate(clim[which(clim$Julian %in% 113:141),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 113:141)], clim$Year[which(clim$Julian %in% 113:141)]), FUN=mean)
+clim.cora= aggregate(clim[which(clim$Julian %in% 135:163),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 135:163)], clim$Year[which(clim$Julian %in% 135:163)]), FUN=mean)
+clim.clav= aggregate(clim[which(clim$Julian %in% 150:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 150:178)], clim$Year[which(clim$Julian %in% 150:178)]), FUN=mean)
+clim.boul= aggregate(clim[which(clim$Julian %in% 150:178),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 150:178)], clim$Year[which(clim$Julian %in% 150:178)]), FUN=mean)
+clim.pell= aggregate(clim[which(clim$Julian %in% 183:211),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 183:211)], clim$Year[which(clim$Julian %in% 183:211)]), FUN=mean)
+clim.sang= aggregate(clim[which(clim$Julian %in% 193:221),c("Max","Mean","Min")], list(clim$Site[which(clim$Julian %in% 193:221)], clim$Year[which(clim$Julian %in% 193:221)]), FUN=mean)
 
 clim.mo= cbind(clim.simp[,c(1:2,4)],clim.cora[,4], clim.clav[,4], clim.boul[,4], clim.pell[,4], clim.sang[,4])
 colnames(clim.mo)=c("Site","Year","simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")
@@ -695,6 +698,12 @@ clim.sum$SpElev= paste(clim.sum$Species, clim.sum$elev, sep="")
 match1= match(bs.all$SpElev, clim.sum$SpElev)
 bs.all$Tmo.anom= bs.all$Mean.mo - clim.sum$Tmo.anom[match1]
 
+#--------------
+#add seasonal timing
+SpTiming= c("nymph","nymph","early","early","late","late")
+match1= match(bs.all$Species, specs)
+bs.all$SpTiming= SpTiming[match1]
+  
 #--------------
 #save data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")

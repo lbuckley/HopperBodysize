@@ -96,13 +96,17 @@ dev.off()
 
 #---------------------
 #Figure 2. Climate trends
+clim.seas$filled[clim.seas$filled<0.25]=0
+clim.seas$filled[clim.seas$filled>0.25]=1
+clim.seas$filled= factor(clim.seas$filled)
 
 clim.plot= ggplot(data=clim.seas, aes(x=Year, y = Mean, color=Site))+ 
   facet_wrap(~Seas)+
-  geom_line()+geom_point()+geom_smooth(method='lm')+
+  geom_line()+geom_point(aes(shape=filled))+geom_smooth(method='lm')+
   theme_bw()+
   scale_color_viridis_d()+
-  ylab("Mean Temperature (C)")
+  ylab("Mean Temperature (C)")+
+  scale_shape_manual(values=c(16,1))
 
 #Save figure 2
 pdf("Fig2_Climate.pdf",height = 6, width = 8)
