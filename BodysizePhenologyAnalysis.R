@@ -183,16 +183,24 @@ bs.phen= ddply(bs.all, c("Species", "elev", "Sites","Sex", "SexElev", "timeperio
 bs.phen$se.femur.anom= bs.phen$sd.femur.anom / sqrt(bs.phen$N)
 bs.phen$se.doy.anom= bs.phen$sd.doy.anom / sqrt(bs.phen$N)
 
-bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=Sex, group=SexElev))+ 
+bs.phen$SexElevTime= paste(bs.phen$Sex, bs.phen$elev, bs.phen$timeperiod, sep="")
+
+bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=Sex, lty=timeperiod, group=SexElevTime))+ 
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
   xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
   scale_color_viridis_d()
+#include time period?
 
-bs.phen.yr.plot= bs.phen.yr.plot + 
-  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, ymin=mean.femur.anom-se.femur.anom, ymax=mean.femur.anom+se.femur.anom), width=0, col="black")+
-  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, xmin=mean.doy.anom-se.doy.anom, xmax=mean.doy.anom+se.doy.anom), width=0, col="black")
+#bs.phen.yr.plot= bs.phen.yr.plot + 
+#  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, ymin=mean.femur.anom-se.femur.anom, ymax=mean.femur.anom+se.femur.anom), width=0, col="black", lty="solid")+
+#  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, xmin=mean.doy.anom-se.doy.anom, xmax=mean.doy.anom+se.doy.anom), width=0, col="black", lty="solid")
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("SizeDoy_museum_means.pdf",height = 8, width = 10)
+bs.phen.yr.plot
+dev.off()
 
 #-------
 #analyze

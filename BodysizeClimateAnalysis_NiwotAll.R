@@ -17,7 +17,7 @@ bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 #analysis
 
 #combined model
-bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites",
+bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites","SpTiming",
                    "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev","Mean.mo","Tmo.anom")] 
 bs.sub1= na.omit(bs.sub1)
 #check drops
@@ -36,6 +36,7 @@ bs.scaled <- transform(bs.sub1,
 )
 
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+bs.scaled$SpTiming= factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymph","early","late"))
 
 #make elevation ordered factor
 #bs.scaled$elev_cs= factor(bs.scaled$elev_cs, ordered=TRUE )
@@ -46,6 +47,12 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
+
+mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
 anova(mod.lmer)
 plot_model(mod.lmer, show.values = TRUE)
@@ -61,6 +68,12 @@ mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+
+mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*SpTiming +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","SpTiming"), show.data=TRUE)
 
 #species month
 mod.lmer <- lmer(Femur.anom~Mean.mo_cs*elev_cs*time*Sex*Species +
