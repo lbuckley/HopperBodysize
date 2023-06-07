@@ -12,6 +12,10 @@ library(lme4)
 library(lmerTest)
 #library(MuMIn)
 
+#Inventory 2021
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
+mus= read.csv("AlexanderSpecimens2021.csv")
+
 #load data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 #bs= read.csv("GrasshopperSize_processed.csv")
@@ -50,19 +54,6 @@ bs= rbind(bs, bs.meas)
 sort(unique(bs$Species))
 bs[which(bs$Species=="A. Clavatus" ),"Species"]="A. clavatus"
 
-#Add Sunshine Canyon speciemns
-sun.dat= read.csv("GrasshopperFemurLength_SunshineCanyon_2021.csv")
-sun.dat$Year="2021"
-sun.dat$Sites="Sunshine Canyon"
-sun.dat$Project_info= "collection"
-sun.dat$Specimen_No=NA; sun.dat$Barcode=NA;sun.dat$Mass=NA;sun.dat$Elevation_low=NA;sun.dat$Elevation_upper=NA
-sun.dat$Sex[sun.dat$Sex=="Male"]="M"; sun.dat$Sex[sun.dat$Sex=="Female"]="F"
-
-inds= match(names(bs),names(sun.dat))
-sun.dat1= sun.dat[inds]
-
-bs= rbind(bs, sun.dat1)
-
 #----------
 #Summer 2022 additions 
 
@@ -79,6 +70,11 @@ bs= rbind(bs, bs.add)
 #Chicken Ranch Gulch Collections
 #check elevation
 bs.add= read.csv("EsimplexFemurLength_ChickenRanchGulch_2022.csv")
+#combine
+bs= rbind(bs, bs.add)
+
+#Lions Lair and Evans collections
+bs.add= read.csv("Grasshoppers_Femur_2022_Final_Troutman.csv")
 #combine
 bs= rbind(bs, bs.add)
 
@@ -122,7 +118,7 @@ bs$time="historic"
 bs$time[which(as.numeric(bs$Year)>2000)]<-"current"
 
 #add elevation
-sites= read.csv("HopperSites.csv") 
+sites= read.csv("HopperSites_2023add.csv") 
 
 #align names
 bs$Sites=trimws(bs$Sites)
@@ -134,6 +130,7 @@ bs$Sites[grep("C1", bs$Sites)]<-"C1"
 bs$Sites[grep("D1", bs$Sites)]<-"Niwot Ridge (D1)"
 bs$Sites[grep("Chicken Ranch", bs$Sites)]<-"Chicken Ranch Gulch"
 bs$Sites[grep("Baldy", bs$Sites)]<-"Baldy Mountain" #Check whether two Baldys
+bs$Sites[bs$Sites=="Sunshine Canyon Rd"]<-"Sunshine Canyon"
 
 bs$Sites[bs$Sites=="Ft. Collins"]<-"Kingfisher"
 bs$Sites[bs$Sites=="Red Fox Hills"]<-"Red Fox"
@@ -142,8 +139,48 @@ bs$Sites[bs$Sites=="Rollins pass"]<-"Rollin's Pass"
 #combine Rollin's and Mt. Evans sites?
 bs$Sites[bs$Sites=="Rollin's Pass (above treeline)"]<-"Rollin's Pass"
 #sites may not be comparable?
-bs$Sites[bs$Sites=="Mt. Goliath, Mt Evans"]<-"Summit lake"
-bs$Sites[bs$Sites=="Summit Lake (above treeline)"]<-"Summit lake"
+#bs$Sites[bs$Sites=="Summit Lake (above treeline)"]<-"Summit lake"
+
+#align 2022 names names
+bs$Sites[bs$Sites=="Lions_Lair"]<-"Lions Lair"
+
+bs$Sites[bs$Sites=="Summit_Lake_Low_Mid"]<-"Summit lake"
+bs$Sites[bs$Sites=="Summit_Lake_High_Mid"]<-"Summit lake"
+bs$Sites[bs$Sites=="Summit_Lake_High"]<-"Summit lake"
+bs$Sites[bs$Sites=="Sum_Lake_Up_Mid"]<-"Summit lake"
+
+bs$Sites[bs$Sites=="Goliath_Mtn"]<-"Mt. Goliath, Mt Evans"
+
+#check with Troutman on names
+bs$Sites[bs$Sites=="Mt_Evans_Goliath_Low"]<-"Mt. Goliath, Mt Evans"
+bs$Sites[bs$Sites=="Mt_Evans_Up_Mid"]<-"Summit lake"
+bs$Sites[bs$Sites=="Mt_Evans_Low_Mid"]<-"Summit lake"
+bs$Sites[bs$Sites=="Sum_Lake_Up_Mid"]<-"Summit lake"
+bs$Sites[bs$Sites=="Mt_Evans_High"]<-"Summit lake"
+
+#check sunshine canyon sites
+#sunshine canyon in body size dataset is 7600ft
+#Lions Lair is close to 6600ft site
+#us_co_sunshine.can.rd.6600; 2012		40.0373	-105.3276
+bs$Sites[bs$Sites=="Lions Lair"]<-"Sunshine Canyon 6600"
+
+#check Mt Evans
+#match bs to museum code
+mus1$Barcode= mus1$SpecimenCode
+mus1$Barcode= as.numeric(sub("UCMC ", "", mus1$Barcode))
+bs$Barcode= as.numeric(bs$Barcode)
+
+#check that body size measurements match museum
+#historic specimens 3688m are Mt. Goliath
+inds= which(bs$Species=="A. clavatus" & bs$Sites=="Mt. Evans" & bs$time=="historic" & bs$Elevation_low %in% c(3505,3688))
+bs[inds,"Sites"]<- "Mt. Goliath, Mt Evans"
+#change low sites to treeline site
+inds= which(bs$Species=="A. clavatus" & bs$Sites=="Mt. Evans" & bs$time=="historic" & bs$Elevation_low %in% c(3383))
+bs[inds,"Sites"]<- "Mount Evans Road, treeline"
+
+bs.ac= bs[bs$Species=="A. clavatus" & bs$Sites=="Mt. Evans" & bs$time=="historic",]
+match1= match(bs.ac$Barcode, mus1$Barcode)
+mus1[match1,]
 
 #add elevation
 bs$elev= sites$elevation[match(bs$Sites, sites$Site)]
@@ -172,9 +209,13 @@ bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. cor
 
 #drop very small pellucida
 bs.sub= bs.sub[-which(bs.sub$Mean_Femur<5.1),]
+bs.sub.allelev= bs.sub
+
+#check numbers
+table(bs.sub[,c("elev","time","Species")])
 
 #subset elevations
-elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3901)
+elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3688,3901)
 bs.sub= subset(bs.sub, bs.sub$elev %in% elevs.keep)
 
 # Drop few samples of X. corallipes chat
@@ -194,9 +235,9 @@ bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2
 # M. sanguinipes C1, D1, sunshine
 bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(2317,3048,3566) ),]
 #M. boulderensis Rollin's Pass, sunshine canyon, chicken ranch gulch
-bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,2317,3414) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,2317) ),]
 #C. pellucida sunshine
-bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,3566) ),] #3048
+bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,3566) ),] 
 
 #explore data
 #full table
@@ -211,12 +252,12 @@ setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySi
 write.csv(tab1,"Counts_Sep2022.csv")
 
 #Use date to assess temp, size relationship for all specimens
-bs.all$Year= as.numeric(as.character(bs.all$Year))
-bs.all$Year[which(bs.all$Year==1048)]<- 1948
-bs.all$Year[which(bs.all$Year==1049)]<- 1949
-bs.all$Year[which(bs.all$Year==1058)]<- 1958
-bs.all$Year[which(bs.all$Year==1059)]<- 1959
-bs.all$Year[which(bs.all$Year==1060)]<- 1960
+bs.sub$Year= as.numeric(as.character(bs.sub$Year))
+bs.sub$Year[which(bs.sub$Year==1048)]<- 1948
+bs.sub$Year[which(bs.sub$Year==1049)]<- 1949
+bs.sub$Year[which(bs.sub$Year==1058)]<- 1958
+bs.sub$Year[which(bs.sub$Year==1059)]<- 1959
+bs.sub$Year[which(bs.sub$Year==1060)]<- 1960
 
 #Write out data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
