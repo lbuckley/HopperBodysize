@@ -209,6 +209,19 @@ bs.sub$Species= factor(bs.sub$Species, order=TRUE, levels=c("E. simplex","X. cor
 
 #drop very small pellucida
 bs.sub= bs.sub[-which(bs.sub$Mean_Femur<5.1),]
+#drop huge sanguinpes
+bs.sub= bs.sub[-which(bs.sub$Mean_Femur>30),]
+
+#Use date to assess temp, size relationship for all specimens
+bs.sub$Year= as.numeric(as.character(bs.sub$Year))
+bs.sub$Year[which(bs.sub$Year==1048)]<- 1948
+bs.sub$Year[which(bs.sub$Year==1049)]<- 1949
+bs.sub$Year[which(bs.sub$Year==1058)]<- 1958
+bs.sub$Year[which(bs.sub$Year==1059)]<- 1959
+bs.sub$Year[which(bs.sub$Year==1060)]<- 1960
+
+#--------
+
 bs.sub.allelev= bs.sub
 
 #check numbers
@@ -231,11 +244,11 @@ write.csv(bs.unmatched, "BodySize_unmatched.csv" )
 # A. clavatus sunshine, chicken ranch gulch
 bs.sub= bs.sub[-which(bs.sub$Species=="A. clavatus" & bs.sub$elev %in%c(2042,2317) ),]
 # X. corallipes chat, sunshine, chicken ranch gulch
-bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(1768,2042,2317) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="X. corallipes" & bs.sub$elev %in%c(2042,2317) ),]
 # M. sanguinipes C1, D1, sunshine
 bs.sub= bs.sub[-which(bs.sub$Species=="M. sanguinipes" & bs.sub$elev %in%c(2317,3048,3566) ),]
 #M. boulderensis Rollin's Pass, sunshine canyon, chicken ranch gulch
-bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,2317) ),]
+bs.sub= bs.sub[-which(bs.sub$Species=="M. boulderensis" & bs.sub$elev %in%c(2042,2317,3688) ),]
 #C. pellucida sunshine
 bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,3566) ),] 
 
@@ -244,20 +257,13 @@ bs.sub= bs.sub[-which(bs.sub$Species=="C. pellucida" & bs.sub$elev %in%c(2317,35
 tab= with(bs.sub, table(Species, elev, Sex, time))
 #counts by species and sites
 with(bs.sub, table(Species, time, Sites))
+with(bs.sub, table(Species, time, elev))
 
 #combine
 tab1= cbind(tab[,1,,1],tab[,1,,2],tab[,2,,1],tab[,2,,2],tab[,3,,1],tab[,3,,2],tab[,4,,1],tab[,4,,2],tab[,5,,1],tab[,5,,2],tab[,6,,1],tab[,6,,2],tab[,7,,1],tab[,7,,2])
 #write out
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/")
 write.csv(tab1,"Counts_Sep2022.csv")
-
-#Use date to assess temp, size relationship for all specimens
-bs.sub$Year= as.numeric(as.character(bs.sub$Year))
-bs.sub$Year[which(bs.sub$Year==1048)]<- 1948
-bs.sub$Year[which(bs.sub$Year==1049)]<- 1949
-bs.sub$Year[which(bs.sub$Year==1058)]<- 1958
-bs.sub$Year[which(bs.sub$Year==1059)]<- 1959
-bs.sub$Year[which(bs.sub$Year==1060)]<- 1960
 
 #Write out data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
@@ -309,11 +315,19 @@ ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, color=time, shape=factor(S
   scale_shape_manual(values = c(16, 21))
 dev.off()
 
-#Violin plot
-bs.unmatched$SexTime= paste(bs.unmatched$Sex, bs.unmatched$time, sep="")
-bs.unmatched$group= paste(bs.unmatched$Species, bs.unmatched$elev, bs.unmatched$Sex, bs.unmatched$time, sep="")
+#-----
+#Violin plot all sites
 
-vplot= ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
+#pick data
+#no elevation subsetting
+bs.dat= bs.sub.allelev
+#elevation subsetting but include unmatched
+#bs.dat= bs.unmatched
+
+bs.dat$SexTime= paste(bs.dat$Sex, bs.dat$time, sep="")
+bs.dat$group= paste(bs.dat$Species, bs.dat$elev, bs.dat$Sex, bs.dat$time, sep="")
+
+vplot= ggplot(data=bs.dat, aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
   facet_wrap(Species~., scales="free")+
   geom_point(position=jdodge, aes(shape=Sex))+
   theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
@@ -328,7 +342,7 @@ vplot= ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, group= SexTime, col
   ylab("Femur length (mm)")
 
 #add mean and se
-bs.sum= ddply(bs.unmatched, c("Species", "elev", "Sex","time","SexTime"), summarise,
+bs.sum= ddply(bs.dat, c("Species", "elev", "Sex","time","SexTime"), summarise,
               N    = length(Mean_Femur),
               mean = mean(Mean_Femur),
               sd   = sd(Mean_Femur) )
@@ -337,10 +351,6 @@ bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 vplot= vplot + 
   geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
   geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
-
-pdf("Size_by_ElevTime_violin_Unmatched.pdf",height = 12, width = 12)
-vplot
-dev.off()
 
 #-------
 # perform a two-sample Kolmogorov-Smirnov test
