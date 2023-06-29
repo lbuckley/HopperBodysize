@@ -226,6 +226,7 @@ bs.sub.allelev= bs.sub
 
 #check numbers
 table(bs.sub[,c("elev","time","Species")])
+table(bs.sub[,c("Sites","time","Species")])
 
 #subset elevations
 elevs.keep= c(1768,2042,2134,2317,2591,3048,3414,3505, 3566, 3688,3901)

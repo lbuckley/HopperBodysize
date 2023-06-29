@@ -25,7 +25,7 @@ bs.all$Year[which(bs.all$Year==1060)]<- 1960
 #----------
 #body size anomally
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
-bs.size.m= aggregate(bs.all[bs.all$Year %in% 1950:1980,c("SpecElevSex","Mean_Femur")], list(bs.all$SpecElevSex[bs.all$Year %in% 1950:1980]), FUN=mean)
+bs.size.m= aggregate(bs.all[bs.all$Year<1980,c("SpecElevSex","Mean_Femur")], list(bs.all$SpecElevSex[bs.all$Year<1980]), FUN=mean)
 names(bs.size.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.size.m$SpecElevSex)
 bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]

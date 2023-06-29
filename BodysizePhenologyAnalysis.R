@@ -142,7 +142,7 @@ ggplot(data=bs.all, aes(x=doy_spec, y=Femur.anom, color=factor(elev), shape=Sex,
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
-  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomally (mm)")+
   scale_color_viridis_d()
 
 #plot doy vs size 
@@ -150,8 +150,8 @@ plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Femur.anom, color=factor(el
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
-  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
-  scale_color_viridis_d()
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomally (mm)")+
+  scale_color_viridis_d(name="Elevation (m)")
 
 # plot.gdd.size= ggplot(data=bs.all, aes(x=dd.anom, y=Mean_Femur, color=factor(elev), shape=Sex, group=SexElev))+ 
 #   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
@@ -189,8 +189,8 @@ bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, co
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+
   theme(legend.position = "bottom")+
-  xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
-  scale_color_viridis_d()
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomally (mm)")+
+  scale_color_viridis_d(name="Elevation (m)")
 #include time period?
 
 #bs.phen.yr.plot= bs.phen.yr.plot + 

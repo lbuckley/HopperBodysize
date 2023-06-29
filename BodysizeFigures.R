@@ -64,6 +64,9 @@ bs.all$group= paste(bs.all$Species, bs.all$elev, bs.all$Sex, bs.all$time, sep=""
 
 bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
+#drop 3414 since no males?
+bs.all= bs.all[-which(bs.all$Species=="M. boulderensis" & bs.all$elev==3414),]
+
 vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=time, fill=time)) +
   facet_wrap(Species~., scales="free", ncol=1)+
   geom_point(position=jdodge, aes(shape=Sex))+
@@ -80,8 +83,8 @@ vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=tim
 #add mean and se
 bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
               N    = length(Femur.anom),
-              mean = mean(Femur.anom),
-              sd   = sd(Femur.anom) )
+              mean = mean(Femur.anom, na.rm=T),
+              sd   = sd(Femur.anom, na.rm=T) )
 bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 
 vplot= vplot + 
@@ -171,7 +174,7 @@ plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= S
   geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
   scale_shape_manual(values = c(21,24,25))+
   scale_fill_viridis_d(na.value=NA, guide="none")+
-  scale_color_viridis_d()+
+  scale_color_viridis_d(name="Elevation (m)")+
   #scale_color_brewer(palette = "Spectral") +
   xlab("Temperature (C)") +ylab("Femur size anomally (mm)")
 #+ scale_y_continuous(trans='log')
