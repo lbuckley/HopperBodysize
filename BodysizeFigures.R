@@ -116,6 +116,19 @@ pdf("Fig2_Climate.pdf",height = 6, width = 8)
 clim.plot
 dev.off()
 
+#---
+# Analyze temporal trends
+
+#add elevation
+elevs.sites= c("NOAA", "A1","B1","C1","D1")
+elevs= c(1672, 2134, 2591, 3048, 3566)
+clim.seas$elev= elevs[match(clim.seas$Site, elevs.sites)]
+
+mod.lm <- lm(Mean~Year*elev, data = clim.seas[which(clim.seas$Seas=="spring"),])
+mod.lm <- lm(Mean~Year*elev, data = clim.seas[which(clim.seas$Seas=="summer"),])
+
+anova(mod.lm)
+
 #---------------------
 #Figure 3. Temperature anomalies
 

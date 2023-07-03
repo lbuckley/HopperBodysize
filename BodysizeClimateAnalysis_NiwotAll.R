@@ -9,6 +9,8 @@ library(plyr)
 library(see)
 library(coefplot2)
 #library(MuMIn)
+library(tidyverse)
+library(broom)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
@@ -41,8 +43,22 @@ bs.scaled$SpTiming= factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymph","ear
 #make elevation ordered factor
 #bs.scaled$elev_cs= factor(bs.scaled$elev_cs, ordered=TRUE )
 
+#---------------
+#TSR initial slopes
+
+mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
+
+mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
+                   (1|Year/Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
+
 #--------------
 #time model
+#USE
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
                    (1|Year/Sites),
                  REML = FALSE,
@@ -54,7 +70,17 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
                  na.action = 'na.omit', data = bs.scaled)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
-anova(mod.lmer)
+check_model(mod.lmer)
+
+aov1= tidy(anova(mod.lmer))
+aov1$sig=""
+aov1$sig[aov1$p.value<0.05]="*"
+aov1$sig[aov1$p.value<0.01]="**"
+aov1$sig[aov1$p.value<0.001]="***"
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+write_csv( tidy(aov1), 'time_anova.csv')
+
 plot_model(mod.lmer, show.values = TRUE)
 plot_model(mod.lmer, type = "slope", rm.terms = "Sex")
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
