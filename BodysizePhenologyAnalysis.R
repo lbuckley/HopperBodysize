@@ -122,6 +122,7 @@ plot.doy.diff + plot.gdd.diff
 dev.off()
 
 #========================================
+#All specimen data
 
 #estimate anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
@@ -185,13 +186,13 @@ bs.phen$se.doy.anom= bs.phen$sd.doy.anom / sqrt(bs.phen$N)
 
 bs.phen$SexElevTime= paste(bs.phen$Sex, bs.phen$elev, bs.phen$timeperiod, sep="")
 
-bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=Sex, lty=timeperiod, group=SexElevTime))+ 
+bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=Sex, group=SexElev))+   
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  facet_wrap(Species~., scales="free")+
+  facet_wrap(Species~., scales="free")+ #, scales="free"
   theme(legend.position = "bottom")+
   xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomally (mm)")+
   scale_color_viridis_d(name="Elevation (m)")
-#include time period?
+#include time period? #lty=timeperiod, group=SexElev
 
 #bs.phen.yr.plot= bs.phen.yr.plot + 
 #  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, ymin=mean.femur.anom-se.femur.anom, ymax=mean.femur.anom+se.femur.anom), width=0, col="black", lty="solid")+
@@ -209,19 +210,29 @@ bs.scaled <- transform(bs.all,
 )
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
-mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species*time + #include time?
+mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
                    (1|Year/Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
-mod.lmer <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
-                   (1|Year/Sites),
-                 REML = FALSE,
-                 na.action = 'na.omit', data = bs.scaled)
+# mod.lmer <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
+#                    (1|Year/Sites),
+#                  REML = FALSE,
+#                  na.action = 'na.omit', data = bs.scaled)
 
 plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Species"), show.data=TRUE)
 #plot_model(mod.lmer, type = "pred", terms = c("doy.anom","Tspr.anom"), show.data=TRUE)
 anova(mod.lmer)
+
+aov1= tidy(anova(mod.lmer))
+aov1$sig=""
+aov1$sig[aov1$p.value<0.05]="*"
+aov1$sig[aov1$p.value<0.01]="**"
+aov1$sig[aov1$p.value<0.001]="***"
+aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+write_csv( aov1, 'phenology_doy_anova.csv')
 
 #-------
 #species individually
