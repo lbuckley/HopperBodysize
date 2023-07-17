@@ -190,7 +190,7 @@ bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, co
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
   facet_wrap(Species~., scales="free")+ #, scales="free"
   theme(legend.position = "bottom")+
-  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomally (mm)")+
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomaly (mm)")+
   scale_color_viridis_d(name="Elevation (m)")
 #include time period? #lty=timeperiod, group=SexElev
 
@@ -199,7 +199,7 @@ bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, co
 #  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, xmin=mean.doy.anom-se.doy.anom, xmax=mean.doy.anom+se.doy.anom), width=0, col="black", lty="solid")
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("SizeDoy_museum_means.pdf",height = 8, width = 10)
+pdf("Fig4_SizeDoy_museum_means.pdf",height = 8, width = 10)
 bs.phen.yr.plot
 dev.off()
 

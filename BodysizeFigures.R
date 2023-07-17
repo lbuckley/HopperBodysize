@@ -41,7 +41,7 @@ elev.plot= ggplot(data=bs.unmatched[bs.unmatched$time=="historic",], aes(x=elev,
   scale_color_manual(values= c("cadetblue"))+
   scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
-  ylab("Femur length anomally (mm)")+ 
+  ylab("Femur length (mm)")+ 
   guides(color = FALSE, shape = FALSE)
 
 #add mean and se
@@ -78,7 +78,7 @@ vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=tim
   scale_color_manual(values= c("darkorange","cadetblue"))+
   scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
-  ylab("Femur length anomally (mm)")
+  ylab("Femur length anomaly (mm)")
 
 #add mean and se
 bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
@@ -99,15 +99,21 @@ dev.off()
 
 #---------------------
 #Figure 2. Climate trends
+
+elevs.sites= c("NOAA", "A1","B1","C1","D1")
+elevs= c(1672, 2134, 2591, 3048, 3566)
+
+clim.seas$elev= elevs[match(clim.seas$Site, elevs.sites)]
+
 clim.seas$filled[clim.seas$filled<0.25]=0
 clim.seas$filled[clim.seas$filled>0.25]=1
 clim.seas$filled= factor(clim.seas$filled)
 
-clim.plot= ggplot(data=clim.seas, aes(x=Year, y = Mean, color=Site))+ 
+clim.plot= ggplot(data=clim.seas, aes(x=Year, y = Mean, color=factor(elev)))+ 
   facet_wrap(~Seas)+
   geom_line()+geom_point(aes(shape=filled))+geom_smooth(method='lm')+
   theme_bw()+
-  scale_color_viridis_d()+
+  scale_color_viridis_d(name="elevation (m)")+
   ylab("Mean Temperature (C)")+
   scale_shape_manual(values=c(16,1))
 
@@ -120,8 +126,6 @@ dev.off()
 # Analyze temporal trends
 
 #add elevation
-elevs.sites= c("NOAA", "A1","B1","C1","D1")
-elevs= c(1672, 2134, 2591, 3048, 3566)
 clim.seas$elev= elevs[match(clim.seas$Site, elevs.sites)]
 
 mod.lm <- lm(Mean~Year*elev, data = clim.seas[which(clim.seas$Seas=="spring"),])
@@ -189,7 +193,7 @@ plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= S
   scale_fill_viridis_d(na.value=NA, guide="none")+
   scale_color_viridis_d(name="Elevation (m)")+
   #scale_color_brewer(palette = "Spectral") +
-  xlab("Temperature (C)") +ylab("Femur size anomally (mm)")
+  xlab("Temperature (C)") +ylab("Femur length anomaly (mm)")
 #+ scale_y_continuous(trans='log')
 
 pdf("Fig3_SizeByTemp.pdf",height = 8, width = 8)

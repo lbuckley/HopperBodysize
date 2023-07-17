@@ -82,6 +82,7 @@ stat.mat$sig[stat.mat$p.value<0.01]="**"
 stat.mat$sig[stat.mat$p.value<0.001]="***"
 
 stat.mat[,c(2:4,6:7)]= round(stat.mat[,c(2:4,6:7)],2)
+stat.mat$var= rownames(stat.mat)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( stat.mat, 'species_slope.csv')
