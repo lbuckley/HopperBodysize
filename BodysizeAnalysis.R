@@ -14,7 +14,7 @@ library(lmerTest)
 
 #Inventory 2021
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/SpecimenData/")
-mus= read.csv("AlexanderSpecimens2021.csv")
+mus1= read.csv("AlexanderSpecimens2021.csv")
 
 #load data
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
@@ -24,7 +24,25 @@ bs= read.csv("GrasshopperSize_processed_checked2020.csv")
 #take out potentially duplicate Levy F data
 #bs= bs[-which(bs$Project_info=="Levy" & bs$Sex=="F"),]
 #Use Levy data rather than Egg Collection data
-bs= bs[-which(bs$Project_info=="EggCollectionScanned"),]
+#bs= bs[-which(bs$Project_info=="EggCollectionScanned"),]
+
+#remove initial Levy data
+bs= bs[-which(bs$Project_info=="Levy"),]
+
+#add updated data with year
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/Data2023/")
+levy= read.csv("Levy_FemaleGradientDataGrasshopper_Updatedyear.csv")
+
+bs.add= bs[1:nrow(levy),]
+bs.add[]=NA
+
+bs.add[,1:3]= levy[,c("Species","Site","Year.collected")]
+bs.add$Project_info= "Levy"
+bs.add$Sex= levy$Sex
+bs.add$Elevation_low= levy$Elevation
+bs.add$Elevation_upper= levy$Elevation
+bs.add$Mean_Femur= levy$Mean.Femur.Length
+bs= rbind(bs,bs.add)
 
 #drop Buckley data since measured more coarsely
 bs= bs[-which(bs$Project_info=="BuckleyPhys"),]
@@ -39,6 +57,7 @@ bs= bs[-which(bs$Project_info=="BuckleyPhys"),]
 bs= bs[-which(bs$Project_info=="A. clavatus survey"),]
 
 #Add new specimens
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.add= read.csv("GrasshopperSize_add_Summer2021.csv")
 #combine
 bs= rbind(bs, bs.add[,1:15])
