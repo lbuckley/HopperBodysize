@@ -476,20 +476,6 @@ ggplot(data=clim.seas, aes(x=Year, y = Min, color=Site))+
 
 #----------------
 #Add climate data to body size
-
-#add 2012, 2013 average
-b.20125= aggregate(clim.seas[clim.seas$Year %in% 2012:2013,c("Year","Site","Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 2012:2013,]$Site, clim.seas[clim.seas$Year %in% 2012:2013,]$Seas), FUN=mean)
-colnames(b.20125)[1:2]=c("Site","Seas")
-b.20125$Year= "2012.5"
-b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
-clim.seas= rbind(clim.seas, b.20125[,colnames(clim.seas)])
-
-b.20125= aggregate(clim.seas[clim.seas$Year %in% 2011:2012,c("Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 2011:2012,]$Site, clim.seas[clim.seas$Year %in% 2011:2012,]$Seas), FUN=mean)
-colnames(b.20125)[1:2]=c("Site","Seas")
-b.20125$Year= "2011.5"
-b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
-clim.seas= rbind(clim.seas, b.20125[,colnames(clim.seas)])
-
 #estimate climate anomaly
 clim.seas.ag= aggregate(clim.seas[clim.seas$Year %in% 1950:1980,c("Max","Min","Mean")], list(clim.seas[clim.seas$Year %in% 1950:1980,]$Site, clim.seas[clim.seas$Year %in% 1950:1980,]$Seas), FUN=mean, na.rm=TRUE)
 names(clim.seas.ag)[1:2]=c("Site","Seas")
@@ -646,19 +632,6 @@ clim.sang= aggregate(clim[which(clim$Julian %in% 193:221),c("Max","Mean","Min")]
 
 clim.mo= cbind(clim.simp[,c(1:2,4)],clim.cora[,4], clim.clav[,4], clim.boul[,4], clim.pell[,4], clim.sang[,4])
 colnames(clim.mo)=c("Site","Year","simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")
-
-#add 2012, 2013 average
-b.20125= aggregate(clim.mo[clim.mo$Year %in% 2012:2013,c("simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")], list(clim.mo[clim.mo$Year %in% 2012:2013,]$Site), FUN=mean)
-colnames(b.20125)[1]=c("Site")
-b.20125$Year= "2012.5"
-b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
-clim.mo= rbind(clim.mo, b.20125[,colnames(clim.mo)])
-
-b.20125= aggregate(clim.mo[clim.mo$Year %in% 2011:2012,c("simp.mean","cora.mean","clav.mean","boul.mean","pell.mean","sang.mean")], list(clim.mo[clim.mo$Year %in% 2011:2012,]$Site), FUN=mean)
-colnames(b.20125)[1]=c("Site")
-b.20125$Year= "2011.5"
-b.20125$SiteYr= paste(b.20125$Site, b.20125$Year, sep="_")
-clim.mo= rbind(clim.mo, b.20125[,colnames(clim.mo)])
 
 clim.mo$SiteYr= paste(clim.mo$Site, clim.mo$Year, sep="_")
 

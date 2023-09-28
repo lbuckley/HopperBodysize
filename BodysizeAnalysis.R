@@ -321,12 +321,12 @@ vplot= vplot +
   geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
   geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
 
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("Size_by_ElevTime_violin.pdf",height = 12, width = 12)
 vplot
 dev.off()
 
 #All sites
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("Size_by_ElevTime_Unmatched.pdf",height = 12, width = 12)
 ggplot(data=bs.unmatched, aes(x=elev, y = Mean_Femur, color=time, shape=factor(Sex))) + 
   facet_wrap(Species~., scales="free")+geom_point(size=2)+

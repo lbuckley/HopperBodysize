@@ -34,8 +34,6 @@ unmatched= unique(bs.sub$spsiteyear[is.na(match1)])
 
 unique(dat.all[which(dat.all$species=="Melanoplus sanguinipes"),"spsiteyear"])
 
-#FIX 2012.5
-
 #--------
 #estimate of doy_adult, gdd_adult
 bs1= merge(bs.sub, dat,
