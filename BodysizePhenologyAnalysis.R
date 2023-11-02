@@ -110,7 +110,7 @@ plot.gdd.diff= ggplot(data=agg.size.yr, aes(x=gdd_adult_diff, y=Mean_Femur_diff,
 agg.size2= aggregate(bs1[,c("Mean_Femur","doy_adult")], by=list(bs1$Species), FUN="mean", na.rm = TRUE)
 
 #-------------------
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("SizeByPhenology_bySite.pdf",height = 12, width = 12)
 plot.doy / plot.gdd
 dev.off()
@@ -159,7 +159,7 @@ plot.doy.size= ggplot(data=bs.all, aes(x=doy.anom, y=Femur.anom, color=factor(el
 #   xlab("Day of year of adulthood anomaly")+ ylab("Femur length (mm)")+
 #   scale_color_viridis_d()
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("SizeDoy_museum.pdf",height = 8, width = 10)
 plot.doy.size #| plot.gdd.size
 dev.off()
@@ -168,7 +168,7 @@ dev.off()
 #group by year?
 
 #add mean and se
-bs.phen= ddply(bs.all, c("Species", "elev", "Sites","Sex", "SexElev", "timeperiod","Year"), summarise,
+bs.phen= ddply(bs.all, c("Species", "elev", "Sites","Sex", "SexElev", "timeperiod","Year", "Tspr.mean.anom", "Tsum.mean.anom.prev"), summarise,
               N    = length(Mean_Femur),
               mean.femur = mean(Mean_Femur),
               sd.femur   = sd(Mean_Femur), 
@@ -177,7 +177,11 @@ bs.phen= ddply(bs.all, c("Species", "elev", "Sites","Sex", "SexElev", "timeperio
               mean.doy = mean(doy_spec),
               sd.doy   = sd(doy_spec), 
               mean.doy.anom = mean(doy.anom),
-              sd.doy.anom  = sd(doy.anom)
+              sd.doy.anom  = sd(doy.anom),
+              mean.Tspr.anom = mean(Tspr.mean.anom),
+              sd.Tspr.anom  = sd(Tspr.mean.anom),
+              mean.Tsum.anom = mean(Tsum.mean.anom.prev),
+              sd.Tsum.anom  = sd(Tsum.mean.anom.prev)
               )
 bs.phen$se.femur.anom= bs.phen$sd.femur.anom / sqrt(bs.phen$N)
 bs.phen$se.doy.anom= bs.phen$sd.doy.anom / sqrt(bs.phen$N)
@@ -196,7 +200,7 @@ bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, co
 #  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, ymin=mean.femur.anom-se.femur.anom, ymax=mean.femur.anom+se.femur.anom), width=0, col="black", lty="solid")+
 #  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, xmin=mean.doy.anom-se.doy.anom, xmax=mean.doy.anom+se.doy.anom), width=0, col="black", lty="solid")
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig4_SizeDoy_museum_means.pdf",height = 8, width = 10)
 bs.phen.yr.plot
 dev.off()
@@ -213,11 +217,6 @@ mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
-# mod.lmer <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
-#                    (1|Year/Sites),
-#                  REML = FALSE,
-#                  na.action = 'na.omit', data = bs.scaled)
-
 plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Species"), show.data=TRUE)
 #plot_model(mod.lmer, type = "pred", terms = c("doy.anom","Tspr.anom"), show.data=TRUE)
 anova(mod.lmer)
@@ -232,6 +231,12 @@ aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( aov1, 'phenology_doy_anova.csv')
 
+#account for environment
+mod.lmer.env <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
+                       (1|Year/Sites),
+                     REML = FALSE,
+                     na.action = 'na.omit', data = bs.scaled)
+anova(mod.lmer.env)
 #-------
 #species individually
 #ANOVA output

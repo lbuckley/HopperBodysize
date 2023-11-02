@@ -102,6 +102,7 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
 # plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
 check_model(mod.lmer)
+check_collinearity(mod.lmer)
 
 aov1= tidy(anova(mod.lmer))
 aov1$sig=""
@@ -133,6 +134,12 @@ mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*Species +
 #                  data = bs.scaled)
 # plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","SpTiming"), show.data=TRUE)
 
+#using temp anomally to avoid collinearity
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+
 aov1= tidy(anova(mod.lmer))
 aov1$sig=""
 aov1$sig[aov1$p.value<0.05]="*"
@@ -142,6 +149,16 @@ aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( aov1, 'time_climate_anova.csv')
+
+#check collinearity of temp
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs+Tsum.anom_cs+elev_cs +
+                   (1|Year/Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+
+check_model(mod.lmer)
+check_collinearity(mod.lmer)
+#low if use temperature anomalies 
 
 # #species month
 # mod.lmer <- lmer(Femur.anom~Mean.mo_cs*elev_cs*time*Sex*Species +

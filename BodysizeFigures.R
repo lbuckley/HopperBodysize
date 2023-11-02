@@ -20,7 +20,7 @@ bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 clim.seas=read.csv("NiwotSeasClimFilled.csv" )
 
 #---------
-#Figure 1a. Elevation gradient all sites
+#Figure 1a. Historic elevation gradient all sites
 dodge <- position_dodge(width = 100)
 jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
 
@@ -44,6 +44,9 @@ elev.plot= ggplot(data=bs.unmatched[bs.unmatched$time=="historic",], aes(x=elev,
   ylab("Femur length (mm)")+ 
   guides(color = FALSE, shape = FALSE)
 
+#change scales
+#https://stackoverflow.com/questions/42588238/setting-individual-y-axis-limits-with-facet-wrap-not-with-scales-free-y
+
 #add mean and se
 bs.sum= ddply(bs.unmatched, c("Species", "elev", "Sex","time","SexTime"), summarise,
               N    = length(Mean_Femur),
@@ -51,14 +54,16 @@ bs.sum= ddply(bs.unmatched, c("Species", "elev", "Sex","time","SexTime"), summar
               sd   = sd(Mean_Femur) )
 bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 
-elev.plot= elev.plot + 
+elev.plot.hist= elev.plot + 
   geom_errorbar(data=bs.sum[bs.sum$time=="historic",], position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
   geom_point(data=bs.sum[bs.sum$time=="historic",], position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
 
 #---------
-#Figure 1b. Elevation gradient anomaly
+#Figure 1b. Current elevation gradient all sites
+dodge <- position_dodge(width = 100)
+jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
 
-#violin plot for anomaly
+#Violin plot
 bs.all$SexTime= paste(bs.all$Sex, bs.all$time, sep="")
 bs.all$group= paste(bs.all$Species, bs.all$elev, bs.all$Sex, bs.all$time, sep="")
 
@@ -67,34 +72,70 @@ bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. cor
 #drop 3414 since no males?
 bs.all= bs.all[-which(bs.all$Species=="M. boulderensis" & bs.all$elev==3414),]
 
-vplot= ggplot(data=bs.all, aes(x=elev, y = Femur.anom, group= SexTime, color=time, fill=time)) +
+elev.plot= ggplot(data=bs.all[bs.all$time=="current",], aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
   facet_wrap(Species~., scales="free", ncol=1)+
   geom_point(position=jdodge, aes(shape=Sex))+
   theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
   theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
   geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
-  theme_modern()+
-  scale_fill_manual(values= c("darkorange","cadetblue"))+
-  scale_color_manual(values= c("darkorange","cadetblue"))+
+  theme_modern(legend.position = "none")+
+  scale_fill_manual(values= c("darkorange"))+
+  scale_color_manual(values= c("darkorange"))+
   scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
-  ylab("Femur length anomaly (mm)")
+  ylab("Femur length (mm)")+ 
+  guides(color = FALSE, shape = FALSE)
 
 #add mean and se
+bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
+              N    = length(Mean_Femur),
+              mean = mean(Mean_Femur),
+              sd   = sd(Mean_Femur) )
+bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
+
+elev.plot.current= elev.plot + 
+  geom_errorbar(data=bs.sum[bs.sum$time=="current",], position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  geom_point(data=bs.sum[bs.sum$time=="current",], position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
+
+#---------
+#Figure 1c. Elevation gradient anomaly
+
+#violin plot for anomaly
+bs.all$SexTime= paste(bs.all$Sex, bs.all$time, sep="")
+bs.all$group= paste(bs.all$Species, bs.all$elev, bs.all$Sex, bs.all$time, sep="")
+
+bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
+
+#plot mean and se
 bs.sum= ddply(bs.all, c("Species", "elev", "Sex","time","SexTime"), summarise,
               N    = length(Femur.anom),
               mean = mean(Femur.anom, na.rm=T),
               sd   = sd(Femur.anom, na.rm=T) )
 bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 
-vplot= vplot + 
-  geom_errorbar(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  geom_point(data=bs.sum, position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
+anom.plot= ggplot(data=bs.sum, aes(x=elev, y = mean, group= SexTime, color=time, fill=time)) +
+  facet_wrap(Species~., scales="free_x", ncol=1)+
+  geom_point( aes(shape=Sex), size=3, col="black")+
+  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
+  theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
+  theme_modern()+
+  scale_fill_manual(values= c("darkorange","cadetblue"))+
+  scale_color_manual(values= c("darkorange","cadetblue"))+
+  scale_shape_manual(values=c(21,24,25))+
+  xlab("Elevation (m)")+
+  ylab("Femur length anomaly (mm)")
+  
+anom.plot= anom.plot + geom_hline(yintercept=0, color="gray")
+
+anom.plot= anom.plot + 
+  geom_errorbar(data=bs.sum, aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+  xlim(1700,4000)
 
 #Save figure 1
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("Fig1_SizeByElevTime.pdf",height = 15, width = 10)
-elev.plot + vplot
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig1_SizeByElevTime.pdf",height = 15, width = 15)
+elev.plot.hist + elev.plot.current + anom.plot + 
+  plot_layout(widths = c(1, 1, 0.8))
 dev.off()
 
 #---------------------
