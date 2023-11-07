@@ -179,7 +179,7 @@ anova(mod.lm)
 
 #add mean and se
 bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
-bs.all.sum= ddply(bs.all, c("Species", "elev", "Sex","Year","SexElev"), summarise,
+bs.all.sum= ddply(bs.all, c("Species", "elev", "Year","SexElev"), summarise, #combine across sex "Sex",
                   N    = length(Mean_Femur),
                   mean = mean(Mean_Femur),
                   std   = sd(Mean_Femur),
@@ -201,6 +201,7 @@ bs.all.sum$Species= factor(bs.all.sum$Species, order=TRUE, levels=c("E. simplex"
 bs.all.sum$time="historic"
 bs.all.sum$time[which(as.numeric(bs.all.sum$Year)>2000)]<-"current"
 bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="") 
+bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 
 #PLOT
@@ -236,6 +237,19 @@ plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= S
   #scale_color_brewer(palette = "Spectral") +
   xlab("Temperature (C)") +ylab("Femur length anomaly (mm)")
 #+ scale_y_continuous(trans='log')
+
+#Mess with plot
+plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= SexElev, color=factor(elev)) )+
+  facet_grid(Species~variable, scales="free", 
+             labeller = labeller(variable = t.labs))+
+  geom_point(size=3, aes(shape=Sex, fill=factor(ifelse(time=="historic", NA, elev)) ))+ #size= sd.anom, 
+  theme_bw()+ #geom_smooth(method="lm", se=FALSE) +
+  geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
+  scale_shape_manual(values = c(21,24,25))+
+  scale_fill_viridis_d(na.value=NA, guide="none")+
+  scale_color_viridis_d(name="Elevation (m)")+
+  #scale_color_brewer(palette = "Spectral") +
+  xlab("Temperature (C)") +ylab("Femur length anomaly (mm)")
 
 pdf("Fig3_SizeByTemp.pdf",height = 8, width = 8)
 plot.Temps

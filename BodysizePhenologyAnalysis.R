@@ -299,5 +299,5 @@ write.csv(lmer.sig, "ModSig_phenology.csv")
 
 #add gdd anomalies
 
-
+#estimate season length? Using Niwot snowtel data? See https://github.com/lbuckley/HopperPhenology/blob/master/ClimateExtremes_20May2022.R.
 
