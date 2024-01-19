@@ -93,9 +93,20 @@ bs.add= read.csv("EsimplexFemurLength_ChickenRanchGulch_2022.csv")
 bs= rbind(bs, bs.add)
 
 #Lions Lair and Evans collections
-bs.add= read.csv("Grasshoppers_Femur_2022_Final_Troutman.csv")
+bs.add= read.csv("Grasshoppers_Femur_2022_Final_check2024.csv")
+#drop specimens without femurs
+bs.add<- bs.add[-which(is.na(bs.add$Mean_Femur)),]
 #combine
 bs= rbind(bs, bs.add)
+
+#check boulderensis size
+mbs<- bs.add[which(bs.add$Species=="M. boulderensis"),]
+sites.t= c("Mt_Evans_Goliath_Low","Mt_Evans_High_Mid","Mt_Evans_Low_Mid")
+elevs.t= c(3548, 3914, 3712)
+mbs$elev<- elevs.t[match(mbs$Sites, sites.t)]
+  
+ggplot(data=mbs, aes(x=elev, y = Mean_Femur))+
+  geom_point(position=jdodge, aes(color=Sex))
 
 #----
 #Museum specimens
@@ -163,18 +174,9 @@ bs$Sites[bs$Sites=="Rollin's Pass (above treeline)"]<-"Rollin's Pass"
 #align 2022 names names
 bs$Sites[bs$Sites=="Lions_Lair"]<-"Lions Lair"
 
-bs$Sites[bs$Sites=="Summit_Lake_Low_Mid"]<-"Summit lake"
-bs$Sites[bs$Sites=="Summit_Lake_High_Mid"]<-"Summit lake"
-bs$Sites[bs$Sites=="Summit_Lake_High"]<-"Summit lake"
-bs$Sites[bs$Sites=="Sum_Lake_Up_Mid"]<-"Summit lake"
-
-bs$Sites[bs$Sites=="Goliath_Mtn"]<-"Mt. Goliath, Mt Evans"
-
-#check with Troutman on names
+#Align Troutman names
 bs$Sites[bs$Sites=="Mt_Evans_Goliath_Low"]<-"Mt. Goliath, Mt Evans"
-bs$Sites[bs$Sites=="Mt_Evans_Up_Mid"]<-"Summit lake"
-bs$Sites[bs$Sites=="Mt_Evans_Low_Mid"]<-"Summit lake"
-bs$Sites[bs$Sites=="Sum_Lake_Up_Mid"]<-"Summit lake"
+bs$Sites[bs$Sites=="Mt_Evans_High_Mid"]<-"Summit lake"
 bs$Sites[bs$Sites=="Mt_Evans_High"]<-"Summit lake"
 
 #check sunshine canyon sites
@@ -399,3 +401,10 @@ ks.test(hist$Mean_Femur,curr$Mean_Femur)
 # M. boulderensis: female bigger low, smaller high; males smaller low
 
 #=======================================
+
+#check boulderensis size
+mbs<- bs.sub[which(bs.sub$Species=="M. boulderensis" & bs.sub$elev==3901),]
+
+ggplot(data=mbs, aes(x=elev, y = Mean_Femur))+
+  geom_point(position=jdodge, aes(shape=Sex, color=factor(Project_info)))
+

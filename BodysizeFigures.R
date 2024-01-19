@@ -116,7 +116,8 @@ bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 anom.plot= ggplot(data=bs.sum, aes(x=elev, y = mean, group= SexTime, color=time, fill=time)) +
   facet_wrap(Species~., scales="free_x", ncol=1)+
   geom_point( aes(shape=Sex), size=3, col="black")+
-  theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+
+  theme_bw()+ 
+  #geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+ #DROP SMOOTH
   theme(legend.position="bottom", legend.key.width=unit(3,"cm"), axis.title=element_text(size=16))+
   theme_modern()+
   scale_fill_manual(values= c("darkorange","cadetblue"))+
@@ -158,6 +159,15 @@ clim.plot= ggplot(data=clim.seas, aes(x=Year, y = Mean, color=factor(elev)))+
   ylab("Mean Temperature (C)")+
   scale_shape_manual(values=c(16,1))
 
+#or use anaomaly?
+clim.plot.anom= ggplot(data=clim.seas, aes(x=Year, y = Mean.anom, color=factor(elev)))+ 
+  facet_wrap(~Seas)+
+  geom_line()+geom_point(aes(shape=filled))+geom_smooth(method='lm')+
+  theme_bw()+
+  scale_color_viridis_d(name="elevation (m)")+
+  ylab("Mean Temperature (C)")+
+  scale_shape_manual(values=c(16,1))
+
 #Save figure 2
 pdf("Fig2_Climate.pdf",height = 6, width = 8)
 clim.plot
@@ -179,7 +189,7 @@ anova(mod.lm)
 
 #add mean and se
 bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
-bs.all.sum= ddply(bs.all, c("Species", "elev", "Year","SexElev"), summarise, #combine across sex "Sex",
+bs.all.sum= ddply(bs.all, c("Species", "elev", "Year"), summarise, #combine across sex "Sex","SexElev"
                   N    = length(Mean_Femur),
                   mean = mean(Mean_Femur),
                   std   = sd(Mean_Femur),
@@ -204,54 +214,48 @@ bs.all.sum$SexTime= paste(bs.all.sum$Sex, bs.all.sum$time, sep="")
 bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 bs.all.sum$SexTimeElev= paste(bs.all.sum$Sex, bs.all.sum$time, bs.all.sum$elev, sep="") 
 
-#PLOT
-# bs.tplot= bs.all.sum[,c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time","Tspr.anom","Tsum.anom.prev","Tmo.anom")]
-# #temp vars in long format
-# 
-# bs.tplot.long= melt(bs.tplot, na.rm = FALSE, value.name = "Temperature", id = c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time"))
-# 
-# # New facet label names
-# t.labs <- c("Spring", "Previous Summer","Month prev")
-# names(t.labs) <- c("Tspr.anom", "Tsum.anom.prev","Tmo.anom")
-
-#Mean not anomaly
-bs.tplot= bs.all.sum[,c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time","Tspr.mean","Tsum.prev","Tmo")]
-#temp vars in long format
-
-bs.tplot.long= melt(bs.tplot, na.rm = FALSE, value.name = "Temperature", id = c("Species","elev","Sex","Year","SexElev","mean.anom","se.anom","time"))
-
 # New facet label names
 t.labs <- c("Spring", "Previous Summer","Month prev")
 names(t.labs) <- c("Tspr.mean", "Tsum.prev","Tmo")
 
-#----------------
-plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= SexElev, color=factor(elev)) )+
+#Mean not anomaly
+bs.tplot= bs.all.sum[,c("Species","elev","Year","mean.anom","se.anom","time","Tspr.mean","Tsum.prev")] #"Sex","SexElev", #drop month prev ,"Tmo"
+
+#temp vars in long format
+bs.tplot.long= melt(bs.tplot, na.rm = FALSE, value.name = "Temperature", id = c("Species","elev","Year","mean.anom","se.anom","time")) #"Sex","SexElev",
+#order seasonally
+bs.tplot.long$variable <- factor(bs.tplot.long$variable, levels=c("Tsum.prev","Tspr.mean"))
+
+plot.Temps.all=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(Species~variable, scales="free", 
              labeller = labeller(variable = t.labs))+
-  geom_point(size=3, aes(shape=Sex, fill=factor(ifelse(time=="historic", NA, elev)) ))+ #size= sd.anom, 
+  geom_point(size=3, aes(shape=time, fill=factor(elev)))+ #size= sd.anom, #, fill=factor(ifelse(time=="historic", NA, elev))
   theme_bw()+ geom_smooth(method="lm", se=FALSE) +
-  geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
+  #geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
   scale_shape_manual(values = c(21,24,25))+
   scale_fill_viridis_d(na.value=NA, guide="none")+
   scale_color_viridis_d(name="Elevation (m)")+
   #scale_color_brewer(palette = "Spectral") +
   xlab("Temperature (C)") +ylab("Femur length anomaly (mm)")
-#+ scale_y_continuous(trans='log')
 
-#Mess with plot
-plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= SexElev, color=factor(elev)) )+
+#-------------
+#plot subset in main text
+
+bs.tplot.long= bs.tplot.long[bs.tplot.long$Species %in% c("E. simplex","M. sanguinipes"),]
+
+plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(Species~variable, scales="free", 
              labeller = labeller(variable = t.labs))+
-  geom_point(size=3, aes(shape=Sex, fill=factor(ifelse(time=="historic", NA, elev)) ))+ #size= sd.anom, 
-  theme_bw()+ #geom_smooth(method="lm", se=FALSE) +
-  geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
+  geom_point(size=3, aes(shape=time, fill=factor(elev)))+ #size= sd.anom, #, fill=factor(ifelse(time=="historic", NA, elev))
+  theme_bw()+ geom_smooth(method="lm", se=FALSE) +
+  #geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
   scale_shape_manual(values = c(21,24,25))+
   scale_fill_viridis_d(na.value=NA, guide="none")+
   scale_color_viridis_d(name="Elevation (m)")+
   #scale_color_brewer(palette = "Spectral") +
   xlab("Temperature (C)") +ylab("Femur length anomaly (mm)")
 
-pdf("Fig3_SizeByTemp.pdf",height = 8, width = 8)
+pdf("Fig3_SizeByTemp_simple.pdf",height = 8, width = 8)
 plot.Temps
 dev.off()
 

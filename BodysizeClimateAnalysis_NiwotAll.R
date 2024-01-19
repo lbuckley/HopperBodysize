@@ -49,12 +49,12 @@ bs.scaled$SpTiming= factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymph","ear
 #TSR initial slopes
 
 mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*Species +
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
 
 mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
 
@@ -65,7 +65,7 @@ stats= array(data=NA, dim=c(length(specs),3,6),
 for(spec.k in 1:length(specs)){
   
   mod.lmer <- lmer(Mean_Femur~elev_cs*Sex +
-                     (1|Year/Sites),
+                     (1|Year:Sites),
                    REML = FALSE, na.action = 'na.fail', 
                    data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),]) 
   
@@ -91,12 +91,12 @@ write_csv( stat.mat, 'species_slope.csv')
 #time model
 
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
 
 # mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
-#                    (1|Year/Sites),
+#                    (1|Year:Sites),
 #                  REML = FALSE,
 #                  na.action = 'na.omit', data = bs.scaled)
 # plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
@@ -124,19 +124,19 @@ plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show
 #spring temp and previous summer temp
 #not currently using temp anomally
 mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*Species +
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
 # mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*SpTiming +
-#                    (1|Year/Sites),
+#                    (1|Year:Sites),
 #                  REML = FALSE, na.action = 'na.fail', 
 #                  data = bs.scaled)
 # plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","SpTiming"), show.data=TRUE)
 
 #using temp anomally to avoid collinearity
 mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
@@ -152,7 +152,7 @@ write_csv( aov1, 'time_climate_anova.csv')
 
 #check collinearity of temp
 mod.lmer <- lmer(Femur.anom~Tspr.anom_cs+Tsum.anom_cs+elev_cs +
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
@@ -162,7 +162,7 @@ check_collinearity(mod.lmer)
 
 # #species month
 # mod.lmer <- lmer(Femur.anom~Mean.mo_cs*elev_cs*time*Sex*Species +
-#                    (1|Year/Sites),
+#                    (1|Year:Sites),
 #                  REML = FALSE, na.action = 'na.fail', 
 #                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 # plot_model(mod.lmer, type = "pred", terms = c("Mean.mo_cs","elev_cs","time","Species"), show.data=TRUE)
@@ -176,16 +176,16 @@ summary(mod.lmer)$AICtab
 coef(mod.lmer)
 plot_model(mod.lmer, type = "slope")
 
-mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tsum_cs","elev_cs","time","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","Species"), show.data=TRUE)
+mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Species"), show.data=TRUE)
 
-plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","Tsum_cs","elev_cs"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs"), show.data=TRUE)
 # At higher elevations: body size increases with warmer spring temperatures after cold summers but decreases after warm summers
-plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","Tsum_cs","elev_cs","time"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","Tsum_cs","elev_cs","Species"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs","time"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
 
-plot_model(mod.lmer, type = "pred", terms = c("Tsum_cs","elev_cs","time","Sex"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
 
 #--------
 #Other plots

@@ -68,12 +68,12 @@ plot.gdd= ggplot(data=agg.size.yr, aes(x=gdd_adult, y=Mean_Femur, color=Species,
 
 #model
 mod.lmer <- lmer(Femur.anom~doy.anom*Sex*Species + #include time?
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs1)
 
 mod.lmer <- lmer(Femur.anom~gdd.anom*Sex*Species + #include time?
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs1)
 
@@ -200,8 +200,38 @@ bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, co
 #  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, ymin=mean.femur.anom-se.femur.anom, ymax=mean.femur.anom+se.femur.anom), width=0, col="black", lty="solid")+
 #  geom_errorbar(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, xmin=mean.doy.anom-se.doy.anom, xmax=mean.doy.anom+se.doy.anom), width=0, col="black", lty="solid")
 
+#simplify
+
+#add mean and se
+bs.phen= ddply(bs.all, c("Species", "elev", "Sites","timeperiod","Year", "Tspr.mean.anom", "Tsum.mean.anom.prev"), summarise,
+               N    = length(Mean_Femur),
+               mean.femur = mean(Mean_Femur),
+               sd.femur   = sd(Mean_Femur), 
+               mean.femur.anom = mean(Femur.anom),
+               sd.femur.anom  = sd(Femur.anom),
+               mean.doy = mean(doy_spec),
+               sd.doy   = sd(doy_spec), 
+               mean.doy.anom = mean(doy.anom),
+               sd.doy.anom  = sd(doy.anom),
+               mean.Tspr.anom = mean(Tspr.mean.anom),
+               sd.Tspr.anom  = sd(Tspr.mean.anom),
+               mean.Tsum.anom = mean(Tsum.mean.anom.prev),
+               sd.Tsum.anom  = sd(Tsum.mean.anom.prev)
+)
+bs.phen$se.femur.anom= bs.phen$sd.femur.anom / sqrt(bs.phen$N)
+bs.phen$se.doy.anom= bs.phen$sd.doy.anom / sqrt(bs.phen$N)
+
+bs.phen.yr.plot= ggplot(data=bs.phen[bs.phen$Species %in% c("E. simplex","M. sanguinipes"),], aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=timeperiod, group=elev))+   
+  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
+  facet_wrap(Species~., ncol=1)+ #, scales="free"
+  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomaly (mm)")+
+  scale_color_viridis_d(name="Elevation (m)")
+
+#add zeros
+bs.phen.yr.plot= bs.phen.yr.plot + geom_hline(yintercept=0, color="gray")+ geom_vline(xintercept=0, color="gray")
+
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig4_SizeDoy_museum_means.pdf",height = 8, width = 10)
+pdf("Fig4_SizeDoy_museum_means.pdf",height = 8, width = 5)
 bs.phen.yr.plot
 dev.off()
 
@@ -212,8 +242,8 @@ bs.scaled <- transform(bs.all,
 )
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
-mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Sex*Species + #include time?
-                   (1|Year/Sites),
+mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Species + #include time? #drop sex *Sex
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
@@ -233,7 +263,7 @@ write_csv( aov1, 'phenology_doy_anova.csv')
 
 #account for environment
 mod.lmer.env <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
-                       (1|Year/Sites),
+                       (1|Year:Sites),
                      REML = FALSE,
                      na.action = 'na.omit', data = bs.scaled)
 anova(mod.lmer.env)
@@ -244,7 +274,7 @@ anova(mod.lmer.env)
 stat= c("Sum Sq","NumDF","F value","Pr(>F)")
 
 mod.lmer <- lmer(Femur.anom~doy.anom*elev*Sex + #include time?
-                   (1|Year/Sites),
+                   (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
 
@@ -259,7 +289,7 @@ slopeplots <- vector('list', length(specs))
 for(spec.k in 1:length(specs)){
   
   mod.lmer <- lmer(Femur.anom~doy.anom*elev*Sex + #include time?
-                     (1|Year/Sites),
+                     (1|Year:Sites),
                    REML = FALSE,
                    na.action = 'na.omit', data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),])
   
