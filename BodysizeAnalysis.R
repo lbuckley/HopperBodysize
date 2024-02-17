@@ -99,6 +99,18 @@ bs.add<- bs.add[-which(is.na(bs.add$Mean_Femur)),]
 #combine
 bs= rbind(bs, bs.add)
 
+#load remeasured data
+bs.add.2024= read.csv("Grasshoppers_Femur_2022_Final_Schoville.csv")
+
+#check data
+ch1<- read.csv("Grasshoppers_Femur_2022_Final_Schoville_wID.csv") 
+ch2<-  read.csv("Grasshoppers_Femur_2022_Final_Troutman_wID.csv") 
+
+match1<- match(ch1$ID, ch2$ID)
+ch1$Mean_Femur_init<- ch2$Mean_Femur[match1]
+plot(ch1$Mean_Femur_init, ch1$Mean_Femur)
+abline(0,1)
+
 #check boulderensis size
 mbs<- bs.add[which(bs.add$Species=="M. boulderensis"),]
 sites.t= c("Mt_Evans_Goliath_Low","Mt_Evans_High_Mid","Mt_Evans_Low_Mid")
@@ -404,7 +416,13 @@ ks.test(hist$Mean_Femur,curr$Mean_Femur)
 
 #check boulderensis size
 mbs<- bs.sub[which(bs.sub$Species=="M. boulderensis" & bs.sub$elev==3901),]
+mbs<- bs.sub[which(bs.sub$Species=="A. clavatus" & bs.sub$elev==3901),]
 
 ggplot(data=mbs, aes(x=elev, y = Mean_Femur))+
   geom_point(position=jdodge, aes(shape=Sex, color=factor(Project_info)))
+
+mbs<- bs.sub[which(bs.sub$Species=="A. clavatus" & bs.sub$Project_info=="2022 collection"),]
+
+
+
 
