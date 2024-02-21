@@ -94,22 +94,29 @@ bs= rbind(bs, bs.add)
 
 #Lions Lair and Evans collections
 bs.add= read.csv("Grasshoppers_Femur_2022_Final_check2024.csv")
-#drop specimens without femurs
-bs.add<- bs.add[-which(is.na(bs.add$Mean_Femur)),]
-#combine
-bs= rbind(bs, bs.add)
 
 #load remeasured data
 bs.add.2024= read.csv("Grasshoppers_Femur_2022_Final_Schoville.csv")
 
-#check data
-ch1<- read.csv("Grasshoppers_Femur_2022_Final_Schoville_wID.csv") 
-ch2<-  read.csv("Grasshoppers_Femur_2022_Final_Troutman_wID.csv") 
+#replace initial measurements
+bs.add= bs.add[-which(bs.add$Species=="M. boulderensis" & bs.add$Sites=="Mt_Evans_High_Mid"),]
+bs.add= bs.add[-which(bs.add$Species=="A. clavatus" & bs.add$Sites=="Mt_Evans_High"),]
+#combine
+bs.add= rbind(bs.add, bs.add.2024)
 
-match1<- match(ch1$ID, ch2$ID)
-ch1$Mean_Femur_init<- ch2$Mean_Femur[match1]
-plot(ch1$Mean_Femur_init, ch1$Mean_Femur)
-abline(0,1)
+##drop specimens without femurs
+bs.add<- bs.add[-which(is.na(bs.add$Mean_Femur)),]
+#combine
+bs= rbind(bs, bs.add)
+
+#check data
+#ch1<- read.csv("Grasshoppers_Femur_2022_Final_Schoville_wID.csv") 
+#ch2<-  read.csv("Grasshoppers_Femur_2022_Final_Troutman_wID.csv") 
+
+# match1<- match(ch1$ID, ch2$ID)
+# ch1$Mean_Femur_init<- ch2$Mean_Femur[match1]
+# plot(ch1$Mean_Femur_init, ch1$Mean_Femur)
+# abline(0,1)
 
 #check boulderensis size
 mbs<- bs.add[which(bs.add$Species=="M. boulderensis"),]
