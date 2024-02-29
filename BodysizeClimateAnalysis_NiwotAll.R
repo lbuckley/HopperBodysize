@@ -90,16 +90,11 @@ write_csv( stat.mat, 'species_slope.csv')
 #--------------
 #time model
 
-mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*Species +
+mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
                    (1|Year:Sites),
                  REML = FALSE,
-                 na.action = 'na.omit', data = bs.scaled) #bs.scaled[-which(bs.scaled$Species=="X. corallipes"),]
-
-# mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
-#                    (1|Year:Sites),
-#                  REML = FALSE,
-#                  na.action = 'na.omit', data = bs.scaled)
-# plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
+                 na.action = 'na.omit', data = bs.scaled)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
 check_model(mod.lmer)
 check_collinearity(mod.lmer)
@@ -116,35 +111,21 @@ write_csv( aov1, 'time_anova.csv')
 
 plot_model(mod.lmer, show.values = TRUE)
 plot_model(mod.lmer, type = "slope", rm.terms = "Sex")
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "Species"), show.data=TRUE)
 
 #--------------
 #time + climate model 
+#spring temp or previous summer temp
+#drop sex
 
-#spring temp and previous summer temp
-#not currently using temp anomally
-mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*Species +
+mod.lmer <- lmer(Femur.anom~Tspr_cs*elev_cs*time*SpTiming +
                    (1|Year:Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
-# mod.lmer <- lmer(Femur.anom~Tspr_cs*Tsum_cs*elev_cs*time*Sex*SpTiming +
-#                    (1|Year:Sites),
-#                  REML = FALSE, na.action = 'na.fail', 
-#                  data = bs.scaled)
-# plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","SpTiming"), show.data=TRUE)
-
-#just spring or summer
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs*time*Sex*Species +
-                   (1|Year:Sites),
-                 REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
-
-#using temp anomally to avoid collinearity
-mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*time*Sex*Species +
-                   (1|Year:Sites),
-                 REML = FALSE, na.action = 'na.fail', 
-                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+mod.lmer.sum <- lmer(Femur.anom~Tsum_cs*elev_cs*time*SpTiming +
+                    (1|Year:Sites),
+                  REML = FALSE, na.action = 'na.fail', 
+                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 
 aov1= tidy(anova(mod.lmer))
 aov1$sig=""
@@ -155,6 +136,19 @@ aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( aov1, 'time_climate_anova.csv')
+
+summary(mod.lmer)$AICtab
+coef(mod.lmer) #random effects
+plot_model(mod.lmer, type = "slope")
+
+mod.fig= plot_model(mod.lmer, type = "pred", terms = c("elev_cs","Tspr_cs","time","SpTiming"), show.data=TRUE)
+#summer plot
+mod.sum= plot_model(mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsum_cs","time","SpTiming"), show.data=TRUE)
+
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
+pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
+mod.fig
+dev.off()
 
 # #check collinearity of temp
 # mod.lmer <- lmer(Femur.anom~Tspr.anom_cs+Tsum.anom_cs+elev_cs +
@@ -167,31 +161,7 @@ write_csv( aov1, 'time_climate_anova.csv')
 #low if use temperature anomalies 
 
 # #species month
-# mod.lmer <- lmer(Femur.anom~Mean.mo_cs*elev_cs*time*Sex*Species +
-#                    (1|Year:Sites),
-#                  REML = FALSE, na.action = 'na.fail', 
-#                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
-# plot_model(mod.lmer, type = "pred", terms = c("Mean.mo_cs","elev_cs","time","Species"), show.data=TRUE)
-# plot_model(mod.lmer, type = "pred", terms = c("Mean.mo_cs","elev_cs","Species"), show.data=TRUE)
-
-#--------------------
-
-anova(mod.lmer)
-summary(mod.lmer)$coefficients
-summary(mod.lmer)$AICtab
-coef(mod.lmer)
-plot_model(mod.lmer, type = "slope")
-
-mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Species"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Species"), show.data=TRUE)
-
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs"), show.data=TRUE)
-# At higher elevations: body size increases with warmer spring temperatures after cold summers but decreases after warm summers
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs","time"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","Tsum.anom_cs","elev_cs","Species"), show.data=TRUE)
-
-plot_model(mod.lmer, type = "pred", terms = c("Tsum.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
-plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","Sex"), show.data=TRUE)
+#Mean.mo_cs
 
 #--------
 #Other plots
@@ -204,10 +174,5 @@ plot_model(mod.lmer, type = "slope")
 plot_model(mod.lmer, type = "resid")
 plot_model(mod.lmer, type = "diag")
 plot_model(mod.lmer, type = "int")
-
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
-pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)
-mod.fig
-dev.off()
 
 #library(remef)
