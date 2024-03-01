@@ -41,6 +41,7 @@ bs.scaled <- transform(bs.sub1,
 
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 bs.scaled$SpTiming= factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymph","early","late"))
+bs.scaled$time= factor(bs.scaled$time, order=TRUE, levels=c("historic","current"))
 
 #make elevation ordered factor
 #bs.scaled$elev_cs= factor(bs.scaled$elev_cs, ordered=TRUE )
@@ -141,7 +142,7 @@ summary(mod.lmer)$AICtab
 coef(mod.lmer) #random effects
 plot_model(mod.lmer, type = "slope")
 
-mod.fig= plot_model(mod.lmer, type = "pred", terms = c("elev_cs","Tspr_cs","time","SpTiming"), show.data=TRUE)
+mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","SpTiming"), show.data=TRUE)
 #summer plot
 mod.sum= plot_model(mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsum_cs","time","SpTiming"), show.data=TRUE)
 
