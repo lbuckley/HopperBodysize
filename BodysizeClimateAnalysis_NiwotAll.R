@@ -97,6 +97,14 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
                  na.action = 'na.omit', data = bs.scaled)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
+#time model without sex
+mod.lmer <- lmer(Femur.anom~time*elev_cs*SpTiming +
+                   (1|Year:Sites),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled)
+
+summary(mod.lmer)$AICtab
+
 check_model(mod.lmer)
 check_collinearity(mod.lmer)
 
@@ -118,15 +126,27 @@ plot_model(mod.lmer, type = "slope", rm.terms = "Sex")
 #spring temp or previous summer temp
 #drop sex
 
-mod.lmer <- lmer(Femur.anom~Tspr_cs*elev_cs*time*SpTiming +
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs*time*SpTiming +
                    (1|Year:Sites),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","SpTiming"), show.data=TRUE)
 
 mod.lmer.sum <- lmer(Femur.anom~Tsum_cs*elev_cs*time*SpTiming +
                     (1|Year:Sites),
                   REML = FALSE, na.action = 'na.fail', 
                   data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+mod.sum= plot_model(mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsum_cs","time","SpTiming"), show.data=TRUE)
+
+#----------
+#drop time period for figure?
+mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs*SpTiming +
+                   (1|Year:Sites),
+                 REML = FALSE, na.action = 'na.fail', 
+                 data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+
+plot_model(mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","SpTiming"), show.data=FALSE)
+#----------
 
 aov1= tidy(anova(mod.lmer))
 aov1$sig=""
@@ -141,10 +161,6 @@ write_csv( aov1, 'time_climate_anova.csv')
 summary(mod.lmer)$AICtab
 coef(mod.lmer) #random effects
 plot_model(mod.lmer, type = "slope")
-
-mod.fig= plot_model(mod.lmer, type = "pred", terms = c("Tspr_cs","elev_cs","time","SpTiming"), show.data=TRUE)
-#summer plot
-mod.sum= plot_model(mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsum_cs","time","SpTiming"), show.data=TRUE)
 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Sept2022/")
 pdf("ModPlots_clim_combined.pdf",height = 12, width = 12)

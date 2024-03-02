@@ -203,7 +203,7 @@ bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, co
 #simplify
 
 #add mean and se
-bs.phen= ddply(bs.all, c("Species", "elev", "Sites","timeperiod","Year", "Tspr.mean.anom", "Tsum.mean.anom.prev"), summarise,
+bs.phen= ddply(bs.all, c("Species", "SpTiming", "elev", "Sites","timeperiod","Year", "Tspr.mean.anom", "Tsum.mean.anom.prev"), summarise,
                N    = length(Mean_Femur),
                mean.femur = mean(Mean_Femur),
                sd.femur   = sd(Mean_Femur), 
@@ -221,26 +221,33 @@ bs.phen= ddply(bs.all, c("Species", "elev", "Sites","timeperiod","Year", "Tspr.m
 bs.phen$se.femur.anom= bs.phen$sd.femur.anom / sqrt(bs.phen$N)
 bs.phen$se.doy.anom= bs.phen$sd.doy.anom / sqrt(bs.phen$N)
 
-bs.phen.yr.plot= ggplot(data=bs.phen[bs.phen$Species %in% c("E. simplex","M. sanguinipes"),], aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=timeperiod, group=elev))+   
-  geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  facet_wrap(Species~., ncol=1)+ #, scales="free"
-  xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomaly (mm)")+
-  scale_color_viridis_d(name="Elevation (m)")
+#rename species timing
+stv<- c("nymphal diapauser","early season","late season")
+bs.phen$SpTiming<- stv[match(bs.phen$SpTiming, c("nymph","early","late"))]
+bs.phen$SpTiming<- factor(bs.phen$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
+
+#order species
+bs.phen$SpTord[bs.phen$Species %in% c("E. simplex","A. clavatus","C. pellucida")]<- 1 
+bs.phen$SpTord[bs.phen$Species %in% c("X. corallipes","M. boulderensis","M. sanguinipes")]<- 2
 
 #all species
-bs.phen.yr.plot.all= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=timeperiod, group=elev))+   
+bs.phen.yr.plot= ggplot(data=bs.phen, aes(x=mean.doy.anom, y=mean.femur.anom, color=factor(elev), shape=timeperiod, group=elev))+   
   geom_point(size=3)+geom_smooth(method="lm", se=FALSE)+theme_bw()+
-  facet_wrap(Species~., ncol=1)+ #, scales="free"
+  facet_grid(SpTord~SpTiming)+ #, scales="free"
+  theme(strip.text.y = element_blank())+ 
   xlab("Day of year of adulthood anomaly")+ ylab("Femur length anomaly (mm)")+
   scale_color_viridis_d(name="Elevation (m)")
 
-#add zeros
-bs.phen.yr.plot= bs.phen.yr.plot + geom_hline(yintercept=0, color="gray")+ geom_vline(xintercept=0, color="gray")
+#add species names to panels
+#make dataframe with labels
+sdf= data.frame(x=-10, y=1, lab=specs, SpTord=c(1,2,1,2,1,2), SpTiming=c(stv[c(1,1,2,2,3,3)]), elev=1768, vjust=1, timeperiod="current")
+sdf$SpTiming<- factor(sdf$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig4_SizeDoy_museum_means.pdf",height = 8, width = 5)
-bs.phen.yr.plot
-dev.off()
+bs.phen.yr.plot= bs.phen.yr.plot + geom_text(aes(x, y, label=lab), data=sdf)
+
+#add zeros
+bs.phen.yr.plot= bs.phen.yr.plot + geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)+ 
+  geom_vline(xintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #-------
 #analyze
@@ -249,13 +256,36 @@ bs.scaled <- transform(bs.all,
 )
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
-mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*Species + #include time? #drop sex *Sex
+#rename species timing
+stv<- c("nymphal diapauser","early season","late season")
+bs.scaled$SpTiming<- stv[match(bs.scaled$SpTiming, c("nymph","early","late"))]
+bs.scaled$SpTiming<- factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
+
+mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*SpTiming + #include time? #drop sex *Sex
                    (1|Year:Sites),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
-plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","Species"), show.data=TRUE)
+phen.mod.fig<- plot_model(mod.lmer, type = "pred", terms = c("doy.anom","elev_cs","SpTiming"), show.data=FALSE, title="")
 #plot_model(mod.lmer, type = "pred", terms = c("doy.anom","Tspr.anom"), show.data=TRUE)
+
+#update model plots
+phen.mod.fig<- phen.mod.fig+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  ylab("Femur length anomaly (mm)")+ xlab("Day of year of adulthood anomaly")
+
+#add zero lines to model plots
+phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
+
+#plot together
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig4.pdf",height = 8, width = 8)
+phen.mod.fig + bs.phen.yr.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
+  plot_annotation(tag_levels = 'A')
+dev.off()
+
+#---------
 anova(mod.lmer)
 
 aov1= tidy(anova(mod.lmer))
@@ -268,12 +298,6 @@ aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( aov1, 'phenology_doy_anova.csv')
 
-#account for environment
-mod.lmer.env <- lmer(Femur.anom~doy.anom*Tspr.mean.anom*Tsum.mean.anom.prev*elev_cs*Sex*Species+
-                       (1|Year:Sites),
-                     REML = FALSE,
-                     na.action = 'na.omit', data = bs.scaled)
-anova(mod.lmer.env)
 #-------
 #species individually
 #ANOVA output
