@@ -88,8 +88,21 @@ elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Fe
 #combine in patchwork
 spec_patch <- plot_fe(specs[1]) +plot_fe(specs[3]) +plot_fe(specs[5]) +
   plot_fe(specs[2]) +plot_fe(specs[4]) +plot_fe(specs[6]) + 
-  plot_layout(ncol = 3, guides="collect")
+  plot_layout(ncol = 3, guides="collect") & ylab(NULL) & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 0, 0))
 #fix collecting axis  , axis_titles = "collect"
+
+# Use the tag label as an x-axis label
+spec_patch <- wrap_elements(panel = spec_patch) +
+  labs(tag = "Elevation (m)") +
+  theme(
+    plot.tag = element_text(size = rel(1)),
+    plot.tag.position = "bottom"
+  )+
+  labs(tag = "Femur length (mm)") +
+  theme(
+    plot.tag = element_text(size = rel(1), angle = 90),
+    plot.tag.position = "left"
+  )
 
 #save
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")

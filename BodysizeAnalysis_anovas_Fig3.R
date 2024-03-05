@@ -223,18 +223,19 @@ bs.sum$SpTiming<- factor(bs.sum$SpTiming, order=TRUE, levels=c("nymphal diapause
 bs.sum$SpTord[bs.sum$Species %in% c("E. simplex","A. clavatus","C. pellucida")]<- 1 
 bs.sum$SpTord[bs.sum$Species %in% c("X. corallipes","M. boulderensis","M. sanguinipes")]<- 2
 
-anom.plot= ggplot(data=bs.sum[bs.sum$time=="current",], aes(x=elev, y = mean, group= SexTime, color=time, fill=time)) +
+#bs.sum[bs.sum$time=="current",]
+anom.plot= ggplot(data=bs.sum, aes(x=elev, y = mean, group= SexTime, color=time, fill=time)) + 
   facet_grid(SpTord~SpTiming)+
-  geom_point( aes(shape=Sex), size=3, col="black")+
+  geom_point( aes(shape=Sex), size=3)+ #, col="black"
   theme_bw()+ 
-  geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+ 
+ # geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+ 
   theme(axis.title=element_text(size=16))+
   theme(strip.text.y = element_blank())+ 
   scale_fill_manual(values= c("darkorange","cadetblue"))+
   scale_color_manual(values= c("darkorange","cadetblue"))+
-  scale_shape_manual(values=c(21,24,25))+
+  scale_shape_manual(values=c(21,24,21))+
   xlab("Elevation (m)")+
-  ylab("Femur length anomaly (mm)")
+  ylab("Femur length anomaly (mm)") 
 
 anom.plot= anom.plot + 
   geom_errorbar(data=bs.sum, aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
