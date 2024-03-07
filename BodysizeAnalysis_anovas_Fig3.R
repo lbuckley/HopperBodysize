@@ -53,17 +53,16 @@ bs.scaled$time= factor(bs.scaled$time, order=TRUE, levels=c("historic","current"
 #---------------
 #TSR initial slopes
 
-mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*Species +
-                   (1|Year:Sites),
-                 REML = FALSE,
-                 na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
-
 mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
-                   (1|Year:Sites),
+                   (1|Year:Sites:Species),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
 
-#sp species
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex","SpTiming"), show.data=FALSE)
+plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex"), show.data=FALSE)
+anova(mod.lmer)
+
+#by species
 stats= array(data=NA, dim=c(length(specs),3,6),
              dimnames=list(specs, c("elev","sex","elev:sex"), c("coef","SE","Sum Sq","NumDF","F value","Pr(>F)")) ) 
 
@@ -97,14 +96,14 @@ write_csv( stat.mat, 'species_slope.csv')
 
 #time model
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
-                   (1|Year:Sites),
+                   (1|Year:Species),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
 #time model without sex
 time.mod.lmer <- lmer(Femur.anom~time*elev_cs*SpTiming +
-                   (1|Year:Sites),
+                   (1|Year:Species),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 time.mod.fig= plot_model(time.mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=FALSE, title="")
@@ -114,13 +113,13 @@ time.mod.fig= plot_model(time.mod.lmer, type = "pred", terms = c("elev_cs","time
 #spring temp or previous summer temp
 #drop sex
 tc.mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*time*elev_cs*SpTiming +
-                   (1|Year:Sites),
+                   (1|Year:Species),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 tc.mod.fig= plot_model(tc.mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","time","SpTiming"), show.data=FALSE, title="")
 
 tc.mod.lmer.sum <- lmer(Femur.anom~Tsum.anom_cs*time*elev_cs*SpTiming +
-                    (1|Year:Sites),
+                    (1|Year:Species),
                   REML = FALSE, na.action = 'na.fail', 
                   data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 tc.mod.fig.sum= plot_model(mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsum_cs","time","SpTiming"), show.data=TRUE)
@@ -129,21 +128,21 @@ tc.mod.fig.sum= plot_model(mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsu
 #climate model
 #spring
 c.mod.lmer <- lmer(Femur.anom~Tspr.anom_cs*elev_cs*SpTiming +
-                   (1|Year:Sites),
+                   (1|Year:Species),
                  REML = FALSE, na.action = 'na.fail', 
                  data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 clim.mod.fig= plot_model(c.mod.lmer, type = "pred", terms = c("Tspr.anom_cs","elev_cs","SpTiming"), show.data=FALSE, title="")
 
 #summer
 c.mod.lmer.sum <- lmer(Femur.anom~Tsum.anom_cs*elev_cs*SpTiming +
-                     (1|Year:Sites),
+                     (1|Year:Species),
                    REML = FALSE, na.action = 'na.fail', 
                    data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 clim.mod.fig.sum= plot_model(c.mod.lmer.sum, type = "pred", terms = c("Tsum.anom_cs","elev_cs","SpTiming"), show.data=FALSE, title="")
 
 #spring and summer
 c.mod.lmer.ss <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*SpTiming +
-                         (1|Year:Sites),
+                         (1|Year:Species),
                        REML = FALSE, na.action = 'na.fail', 
                        data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 plot_model(c.mod.lmer.ss, type = "pred", terms = c("Tspr.anom_cs","elev_cs","SpTiming"), show.data=FALSE)

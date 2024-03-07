@@ -262,7 +262,7 @@ bs.scaled$SpTiming<- stv[match(bs.scaled$SpTiming, c("nymph","early","late"))]
 bs.scaled$SpTiming<- factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
 
 mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*SpTiming + #include time? #drop sex *Sex
-                   (1|Year:Sites),
+                   (1|Year:Species),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled)
 
