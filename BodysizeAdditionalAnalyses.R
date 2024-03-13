@@ -35,10 +35,12 @@ repro.l$variable<- rvar.lab[match(repro.l$variable, rvar)]
 repro.l$variable<- factor(repro.l$variable, order=TRUE, levels=c("Egg mass (g)","Clutch mass (g)","N ovarioles","Prop Funct Ovarioles"))
 #Rename variables
 
-repro.plot= ggplot(data=repro.l, aes(y=value, x = Femur_mm, group=factor(Elevation_m), color=Elevation_m )) + 
-  geom_point()+facet_grid(variable~Species, scales="free", switch="y")+geom_smooth(method="lm")+theme_bw()+
-  scale_color_viridis()+xlab("Femur length (mm)")+ylab("")+labs(color="Elevation (m)")
-
+repro.plot= ggplot(data=repro.l, aes(y=value, x = Femur_mm, color=factor(Elevation_m) )) + 
+  geom_point()+facet_grid(variable~Species, scales="free", switch="y")+geom_smooth(method="lm", aes(fill=factor(Elevation_m)))+theme_bw()+
+  scale_color_viridis_d(name="elevation (m)")+ scale_fill_viridis_d()+
+  xlab("Femur length (mm)")+ylab("")+
+  theme(legend.position="bottom")+ guides(fill="none")
+  
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("FigRepro.pdf",height = 8, width = 8)
 repro.plot
@@ -70,10 +72,35 @@ pmod2$facet$params$nrow=1
 pmod3$facet$params$nrow=1
 pmod4$facet$params$nrow=1
 
+#update model plots
+pmod1<- pmod1+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")
+pmod2<- pmod2+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank()
+  )
+pmod3<- pmod3+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank()
+  )
+pmod4<- pmod4+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank()
+  )
+
 pmods<- pmod1 + pmod2 + pmod3 + pmod4 +plot_layout(ncol = 1) + 
   plot_layout(guides = "collect")  & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 5.5, 0))
 #+ plot_annotation(tag_levels = 'A')
-
 
 # Use the tag label as an x-axis label
 pmods <- wrap_elements(panel = pmods) +
@@ -95,8 +122,6 @@ clim.mod.fig.sum<- clim.mod.fig.sum+ theme_bw()+
   scale_color_viridis_d(name="elevation")+
   scale_fill_viridis_d(name="elevation")+
   ylab("Femur length anomaly (mm)")+ xlab("scaled Summer temperature anomally (C)")
-
-
 
 #sp species
 specs= c("A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes") 
