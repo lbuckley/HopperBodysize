@@ -39,7 +39,6 @@ bs.all$SpTiming<- factor(bs.all$SpTiming, order=TRUE, levels=c("nymphal diapause
 bs.all$SpTord[bs.all$Species %in% c("E. simplex","A. clavatus","C. pellucida")]<- 1 
 bs.all$SpTord[bs.all$Species %in% c("X. corallipes","M. boulderensis","M. sanguinipes")]<- 2
 
-
 #PLOT ALL
 elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
   facet_grid(SpTord~SpTiming)+ #, scales="free_x")+ 
