@@ -19,6 +19,8 @@ bs.unmatched= read.csv("BodySize_unmatched.csv" )
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 clim.seas=read.csv("NiwotSeasClimFilled.csv" )
 
+specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
+
 #-------------------
 #Figure 1. Historic and current elevation gradient all sites
 dodge <- position_dodge(width = 100)
@@ -84,29 +86,44 @@ elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Fe
    #+geom_label(label=species, x=2000, y=12, color="black", label.size=0.5)
 }
 
-#combine in patchwork
-spec_patch <- plot_fe(specs[1]) +plot_fe(specs[3]) +plot_fe(specs[5]) +
-  plot_fe(specs[2]) +plot_fe(specs[4]) +plot_fe(specs[6]) + 
-  plot_layout(ncol = 3, guides="collect") & ylab(NULL) & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 0, 0))
-#fix collecting axis  , axis_titles = "collect"
+# #combine in patchwork
+# spec_patch <- plot_fe(specs[1]) +plot_fe(specs[3]) +plot_fe(specs[5]) +
+#   plot_fe(specs[2]) +plot_fe(specs[4]) +plot_fe(specs[6]) + 
+#   plot_layout(ncol = 3, guides="collect") & ylab(NULL) & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 0, 0))
+# #fix collecting axis  , axis_titles = "collect"
+# 
+# # Use the tag label as an x-axis label
+# spec_patch <- wrap_elements(panel = spec_patch) +
+#   labs(tag = "Elevation (m)") +
+#   theme(
+#     plot.tag = element_text(size = rel(1)),
+#     plot.tag.position = "bottom"
+#   )+
+#   labs(tag = "Femur length (mm)") +
+#   theme(
+#     plot.tag = element_text(size = rel(1), angle = 90),
+#     plot.tag.position = "left"
+#   )
 
-# Use the tag label as an x-axis label
-spec_patch <- wrap_elements(panel = spec_patch) +
-  labs(tag = "Elevation (m)") +
-  theme(
-    plot.tag = element_text(size = rel(1)),
-    plot.tag.position = "bottom"
-  )+
-  labs(tag = "Femur length (mm)") +
-  theme(
-    plot.tag = element_text(size = rel(1), angle = 90),
-    plot.tag.position = "left"
-  )
+spec_patch <- tsr.mod.fig + plot_fe(specs[1]) +plot_fe(specs[3]) +plot_fe(specs[5]) +
+  plot_fe(specs[2]) +plot_fe(specs[4]) +plot_fe(specs[6]) + 
+  plot_layout(guides="collect", design=
+                "111
+                234
+                567") #& ylab(NULL) & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 0, 0))
+
+#get from _Fig3.R code
+#update model plots
+tsr.mod.fig<- tsr.mod.fig+ theme_bw()+
+  scale_color_viridis_d()+
+  scale_fill_viridis_d()+
+  ylab("Femur length (mm)")+ xlab("scaled Elevation (m)")
 
 #save
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig1_both.pdf",height = 8, width = 10)
 spec_patch
+#spec_patch
 dev.off()
 
 #---------------------
@@ -141,7 +158,7 @@ clim.plot.anom= ggplot(data=clim.seas[clim.seas$Seas=="spring",], aes(x=Year, y 
 
 #Save figure 2
 pdf("Fig2_Climate.pdf",height = 6, width = 8)
-clim.plot + clim.plot.anom
+clim.plot + clim.plot.anom + plot_annotation(tag_levels = 'a')
 dev.off()
 
 #---
@@ -166,7 +183,7 @@ clim.plot.anom.sum= ggplot(data=clim.seas[clim.seas$Seas=="summer",], aes(x=Year
 
 #Save figure 2 sup
 pdf("Fig2_Climate_sum.pdf",height = 6, width = 8)
-clim.plot.sum + clim.plot.anom.sum
+clim.plot.sum + clim.plot.anom.sum + plot_annotation(tag_levels = 'a')
 dev.off()
 
 #---
@@ -174,8 +191,17 @@ dev.off()
 
 #add elevation
 clim.seas$elev= elevs[match(clim.seas$Site, elevs.sites)]
+##order elevation
+#clim.seas$elev= factor(clim.seas$elev, order=TRUE, levels=c(1672, 2134,2591,3048,3566))  
+  
+#scale
+clim.scaled <- transform(clim.seas,
+                       elev_cs=scale(elev),
+                       Year_cs=scale(Year)
+)
 
-mod.lm <- lm(Mean~Year*elev, data = clim.seas[which(clim.seas$Seas=="spring"),])
-mod.lm <- lm(Mean~Year*elev, data = clim.seas[which(clim.seas$Seas=="summer"),])
+mod.lm <- lm(Mean.anom~Year_cs*elev_cs, data = clim.scaled[which(clim.scaled$Seas=="spring"),])
+mod.lm <- lm(Mean.anom~Year_cs*elev_cs, data = clim.scaled[which(clim.scaled$Seas=="summer"),])
 
 anova(mod.lm)
+plot_model(mod.lm, type = "pred", terms = c("elev_cs", "Year_cs"), show.data=FALSE)

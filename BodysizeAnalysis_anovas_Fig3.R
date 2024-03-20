@@ -54,12 +54,11 @@ bs.scaled$time= factor(bs.scaled$time, order=TRUE, levels=c("historic","current"
 #TSR initial slopes
 
 mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
-                   (1|Year:Sites:Species),
+                   (1|Year:Species),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
+tsr.mod.fig= plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex","SpTiming"), show.data=FALSE, title="")
 
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex","SpTiming"), show.data=FALSE)
-plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex"), show.data=FALSE)
 anova(mod.lmer)
 
 #by species
@@ -275,7 +274,7 @@ anom.plot= anom.plot+ geom_hline(yintercept=0, linetype="dashed", color = "black
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig1Anom.pdf",height = 8, width = 8)
 time.mod.fig + anom.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #--------------
@@ -328,7 +327,7 @@ anom.plot= anom.plot+ geom_hline(yintercept=0, linetype="dashed", color = "black
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig1Anom_noSex.pdf",height = 8, width = 8)
 time.mod.fig + anom.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #------------
@@ -404,7 +403,7 @@ plot.Temps.all= plot.Temps.all+ geom_hline(yintercept=0, linetype="dashed", colo
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig3.pdf",height = 8, width = 8)
 clim.mod.fig + plot.Temps.all +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
@@ -431,7 +430,7 @@ plot.Temps.sum= plot.Temps.sum + geom_text(aes(x, y, label=lab), data=sdf)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig3_summer.pdf",height = 8, width = 8)
 clim.mod.fig.sum + plot.Temps.sum +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
@@ -458,7 +457,7 @@ plot.Temps.m= plot.Temps.m + geom_text(aes(x, y, label=lab), data=sdf)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig3_month.pdf",height = 8, width = 8)
 clim.mod.fig.m + plot.Temps.m +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================

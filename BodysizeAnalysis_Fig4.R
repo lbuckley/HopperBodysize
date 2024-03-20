@@ -115,7 +115,7 @@ phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("SizeDoy_surveys.pdf",height = 8, width = 8)
 phen.mod.fig + plot.doy +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #-----
@@ -286,7 +286,7 @@ phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = 
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig4.pdf",height = 8, width = 8)
 phen.mod.fig + bs.phen.yr.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'a')
 dev.off()
 
 #---------
