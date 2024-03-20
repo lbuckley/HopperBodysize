@@ -59,6 +59,12 @@ mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
 tsr.mod.fig= plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex","SpTiming"), show.data=FALSE, title="")
 
+#update model plots
+tsr.mod.fig<- tsr.mod.fig+ theme_bw()+
+  scale_color_viridis_d()+
+  scale_fill_viridis_d()+
+  ylab("Femur length (mm)")+ xlab("scaled Elevation (m)")
+
 anova(mod.lmer)
 
 #by species
@@ -171,9 +177,6 @@ clim.mod.fig.m= plot_model(c.mod.lmer.m, type = "pred", terms = c("Tmo.anom_cs",
 # check_collinearity(mod.lmer)
 #low if use temperature anomalies 
 
-# #species month
-#Mean.mo_cs
-
 #--------
 #Other plots
 #https://lmudge13.github.io/sample_code/mixed_effects.html
@@ -185,8 +188,6 @@ plot_model(mod.lmer, type = "slope")
 plot_model(mod.lmer, type = "resid")
 plot_model(mod.lmer, type = "diag")
 plot_model(mod.lmer, type = "int")
-
-#library(remef)
 
 #update model plots
 time.mod.fig<- time.mod.fig+ theme_bw()+
@@ -214,68 +215,6 @@ time.mod.fig= time.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = 
 clim.mod.fig= clim.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 clim.mod.fig.sum= clim.mod.fig.sum+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 clim.mod.fig.m= clim.mod.fig.m+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
-
-#-----------
-#Plot anomaly
-dodge <- position_dodge(width = 100)
-jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
-
-#violin plot for anomaly
-bs.all$SexTime= paste(bs.all$Sex, bs.all$time, sep="")
-bs.all$group= paste(bs.all$Species, bs.all$elev, bs.all$Sex, bs.all$time, sep="")
-
-bs.all$Species= factor(bs.all$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
-
-#plot mean and se
-bs.sum= ddply(bs.all, c("Species", "SpTiming", "elev", "Sex","time","SexTime"), summarise,
-              N    = length(Femur.anom),
-              mean = mean(Femur.anom, na.rm=T),
-              sd   = sd(Femur.anom, na.rm=T) )
-bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
-
-#rename species timing
-stv<- c("nymphal diapauser","early season","late season")
-bs.sum$SpTiming<- stv[match(bs.sum$SpTiming, c("nymph","early","late"))]
-bs.sum$SpTiming<- factor(bs.sum$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
-
-#order species
-bs.sum$SpTord[bs.sum$Species %in% c("E. simplex","A. clavatus","C. pellucida")]<- 1 
-bs.sum$SpTord[bs.sum$Species %in% c("X. corallipes","M. boulderensis","M. sanguinipes")]<- 2
-
-#bs.sum[bs.sum$time=="current",]
-anom.plot= ggplot(data=bs.sum, aes(x=elev, y = mean, group= SexTime, color=time, fill=time)) + 
-  facet_grid(SpTord~SpTiming)+
-  geom_point(position=dodge, aes(shape=Sex), size=3)+ #, col="black"
-  theme_bw()+ 
- # geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+ 
-  theme(axis.title=element_text(size=16))+
-  theme(strip.text.y = element_blank())+ 
-  scale_fill_manual(values= c("darkorange","cadetblue"))+
-  scale_color_manual(values= c("darkorange","cadetblue"))+
-  scale_shape_manual(values=c(21,24,21))+
-  xlab("Elevation (m)")+
-  ylab("Femur length anomaly (mm)") 
-
-anom.plot= anom.plot + 
-  geom_errorbar(data=bs.sum, position=dodge, aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
-  xlim(1700,4000)
-
-#add species names to panels
-#make dataframe with labels
-sdf= data.frame(x=2500, y=1, lab=specs, SpTord=c(1,2,1,2,1,2), SpTiming=c(stv[c(1,1,2,2,3,3)]), elev=1768, vjust=1, SexTime="Fcurrent", time="current")
-sdf$SpTiming<- factor(sdf$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
-
-anom.plot= anom.plot + geom_text(aes(x, y, label=lab), data=sdf, color="black")
-
-#add zero lines
-anom.plot= anom.plot+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
-
-#plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig1Anom.pdf",height = 8, width = 8)
-time.mod.fig + anom.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
-  plot_annotation(tag_levels = 'a')
-dev.off()
 
 #--------------
 #Anom plot without sex
@@ -325,13 +264,13 @@ anom.plot= anom.plot+ geom_hline(yintercept=0, linetype="dashed", color = "black
 
 #plot together
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig1Anom_noSex.pdf",height = 8, width = 8)
+pdf("Fig4Anom_noSex.pdf",height = 8, width = 8)
 time.mod.fig + anom.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #------------
-#Figure 3
+#Figure 5
 
 #add mean and se
 bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
@@ -401,7 +340,7 @@ plot.Temps.all= plot.Temps.all+ geom_hline(yintercept=0, linetype="dashed", colo
 
 #plot together
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig3.pdf",height = 8, width = 8)
+pdf("Fig5.pdf",height = 8, width = 8)
 clim.mod.fig + plot.Temps.all +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -428,7 +367,7 @@ plot.Temps.sum= plot.Temps.sum + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig3_summer.pdf",height = 8, width = 8)
+pdf("Fig5_summer.pdf",height = 8, width = 8)
 clim.mod.fig.sum + plot.Temps.sum +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -455,7 +394,7 @@ plot.Temps.m= plot.Temps.m + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig3_month.pdf",height = 8, width = 8)
+pdf("Fig5_month.pdf",height = 8, width = 8)
 clim.mod.fig.m + plot.Temps.m +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()

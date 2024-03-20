@@ -42,7 +42,7 @@ repro.plot= ggplot(data=repro.l, aes(y=value, x = Femur_mm, color=factor(Elevati
   theme(legend.position="bottom")+ guides(fill="none")
   
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("FigRepro.pdf",height = 8, width = 8)
+pdf("FigS5_Repro.pdf",height = 8, width = 8)
 repro.plot
 dev.off()
 
@@ -112,7 +112,7 @@ pmods <- wrap_elements(panel = pmods) +
 
 #plot together
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("FigRepro_mod.pdf",height = 8, width = 8)
+pdf("FigS6_Repro_mod.pdf",height = 8, width = 8)
 pmods
 dev.off()
 
@@ -129,21 +129,3 @@ mod1=lm(ClutchMass_g~Femur_mm + factor(Elevation_m), data=repro[repro$Species==s
 summary(mod1)
 #Clutch mass of all but clavatus increase significantly with femur length
 
-#====================
-#Allometry
-
-#load data
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
-bs= read.csv("GrasshopperSize_processed_checked2020.csv")
-
-#just Buckley data with femur and mass
-bs= bs[which(bs$Project_info=="BuckleyPhys"),]
-
-#subset to species
-specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
-bs= subset(bs, bs$Species %in% specs)
-
-ggplot(data=bs, aes(x=Mean_Femur, y = Mass, color=Sites, shape=Sex)) + 
-  geom_point()+facet_grid(Species~., scales="free")+geom_smooth(method="lm")+theme_bw()
-
-#====================================
