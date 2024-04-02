@@ -139,7 +139,7 @@ clim.plot.sum= ggplot(data=clim.seas[clim.seas$Seas=="summer",], aes(x=Year, y =
   theme_bw()+
   scale_color_viridis_d(name="elevation (m)")+
   scale_fill_viridis_d()+
-  ylab("Summer temperature (C)")+
+  ylab("Summer temperature (°C)")+
   scale_shape_manual(values=c(16,1))+ 
   guides(color="none", fill = "none", shape="none")
 
@@ -148,13 +148,39 @@ clim.plot.anom.sum= ggplot(data=clim.seas[clim.seas$Seas=="summer",], aes(x=Year
   geom_line()+geom_point(aes(shape=filled))+geom_smooth(se=FALSE,method='lm')+
   theme_bw()+
   scale_color_viridis_d(name="elevation (m)")+
-  ylab("Summer temperature anomaly (C)")+
+  ylab("Summer temperature anomaly (°C)")+
   scale_shape_manual(values=c(16,1))+ 
   guides(fill = "none")
 
 #Save figure 3 sup
 pdf("Fig3_Climate_sum.pdf",height = 6, width = 8)
 clim.plot.sum + clim.plot.anom.sum + plot_annotation(tag_levels = 'a')
+dev.off()
+
+#---
+#growing season plot
+
+clim.plot.gs= ggplot(data=clim.seas[clim.seas$Seas=="gs",], aes(x=Year, y = Mean, color=factor(elev)))+ 
+  geom_line()+geom_point(aes(shape=filled))+geom_smooth(method='lm',aes(fill=factor(elev)))+
+  theme_bw()+
+  scale_color_viridis_d(name="elevation (m)")+
+  scale_fill_viridis_d()+
+  ylab("Growing season temperature (°C)")+
+  scale_shape_manual(values=c(16,1))+ 
+  guides(color="none", fill = "none", shape="none")
+
+#climate anomaly
+clim.plot.anom.gs= ggplot(data=clim.seas[clim.seas$Seas=="gs",], aes(x=Year, y = Mean.anom, color=factor(elev)))+ 
+  geom_line()+geom_point(aes(shape=filled))+geom_smooth(se=FALSE,method='lm')+
+  theme_bw()+
+  scale_color_viridis_d(name="elevation (m)")+
+  ylab("Growing season temperature anomaly (°C)")+
+  scale_shape_manual(values=c(16,1))+ 
+  guides(fill = "none")
+
+#Save figure 3
+pdf("Fig3_gsClimate.pdf",height = 6, width = 8)
+clim.plot.gs + clim.plot.anom.gs + plot_annotation(tag_levels = 'a')
 dev.off()
 
 #---
@@ -173,6 +199,7 @@ clim.scaled <- transform(clim.seas,
 
 mod.lm <- lm(Mean.anom~Year_cs*elev_cs, data = clim.scaled[which(clim.scaled$Seas=="spring"),])
 mod.lm <- lm(Mean.anom~Year_cs*elev_cs, data = clim.scaled[which(clim.scaled$Seas=="summer"),])
+mod.lm <- lm(Mean.anom~Year_cs*elev_cs, data = clim.scaled[which(clim.scaled$Seas=="gs"),])
 
 anova(mod.lm)
 plot_model(mod.lm, type = "pred", terms = c("elev_cs", "Year_cs"), show.data=FALSE)

@@ -22,16 +22,25 @@ specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pelluc
 
 #combined model
 bs.sub1= bs.all[,c("Mean_Femur","Femur.anom","Year","time","elev","Sex","Species","Sites","SpTiming",
-                   "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev","Mean.mo","Tmo.anom")] 
+                   "Tspr.mean","Tspr.mean.anom","Tsum.mean.prev","Tsum.mean.anom.prev",
+                   "Tsum.mean","Tsum.mean.anom",
+                   "Tgs.mean.prev","Tgs.mean.anom.prev","Tgs.mean","Tgs.mean.anom",
+                   "Mean.mo","Tmo.anom")] 
 bs.sub1= na.omit(bs.sub1)
 #check drops
 
 bs.scaled <- transform(bs.sub1,
                        Tspr_cs=scale(Tspr.mean),
                        Tsum_cs=scale(Tsum.mean.prev),
+                       Tsum_cur_cs=scale(Tsum.mean),
+                       Tgs_cs=scale(Tgs.mean),
+                       Tgs_prev_cs=scale(Tgs.mean.prev),
                        elev_cs=scale(elev),
                        Tspr.anom_cs=scale(Tspr.mean.anom),
                        Tsum.anom_cs=scale(Tsum.mean.anom.prev),
+                       Tsum.cur.anom_cs=scale(Tsum.mean.anom),
+                       Tgs.anom_cs=scale(Tgs.mean.anom),
+                       Tgs.prev.anom_cs=scale(Tgs.mean.anom.prev),
                        Mean.mo_cs=scale(Mean.mo),
                        Tmo.anom_cs= scale(Tmo.anom)
                        #, springdd.anom_cs=scale(springdd.anom),
@@ -52,12 +61,19 @@ bs.scaled$time= factor(bs.scaled$time, order=TRUE, levels=c("historic","current"
 
 #---------------
 #TSR initial slopes
-
+#historic
 mod.lmer <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
                    (1|Year:Species),
                  REML = FALSE,
                  na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="historic"),]) 
 tsr.mod.fig= plot_model(mod.lmer, type = "pred", terms = c("elev_cs", "Sex","SpTiming"), show.data=FALSE, title="")
+
+#modern
+mod.lmer.cur <- lmer(Mean_Femur~elev_cs*Sex*SpTiming +
+                   (1|Year:Species),
+                 REML = FALSE,
+                 na.action = 'na.omit', data = bs.scaled[which(bs.scaled$time=="current"),]) 
+tsr.mod.fig.cur= plot_model(mod.lmer.cur, type = "pred", terms = c("elev_cs", "Sex","SpTiming"), show.data=FALSE, title="")
 
 #update model plots
 tsr.mod.fig<- tsr.mod.fig+ theme_bw()+
@@ -129,11 +145,29 @@ tc.mod.lmer.sum <- lmer(Femur.anom~Tsum.anom_cs*time*elev_cs*SpTiming +
                   data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 tc.mod.fig.sum= plot_model(tc.mod.lmer.sum, type = "pred", terms = c("elev_cs","Tsum.anom_cs","time","SpTiming"), show.data=TRUE)
 
+tc.mod.lmer.sum.cur <- lmer(Femur.anom~Tsum.cur.anom_cs*time*elev_cs*SpTiming +
+                          (1|Year:Species),
+                        REML = FALSE, na.action = 'na.fail', 
+                        data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+tc.mod.fig.sum.cur= plot_model(tc.mod.lmer.sum.cur, type = "pred", terms = c("elev_cs","Tsum.cur.anom_cs","time","SpTiming"), show.data=TRUE)
+
 tc.mod.lmer.m <- lmer(Femur.anom~Tmo.anom_cs*time*elev_cs*SpTiming +
                           (1|Year:Species),
                         REML = FALSE, na.action = 'na.fail', 
                         data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 tc.mod.fig.m= plot_model(tc.mod.lmer.m, type = "pred", terms = c("elev_cs","Tmo.anom_cs","time","SpTiming"), show.data=TRUE)
+
+tc.mod.lmer.gs <- lmer(Femur.anom~Tgs.anom_cs*time*elev_cs*SpTiming +
+                        (1|Year:Species),
+                      REML = FALSE, na.action = 'na.fail', 
+                      data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+tc.mod.fig.gs= plot_model(tc.mod.lmer.gs, type = "pred", terms = c("elev_cs","Tgs.anom_cs","time","SpTiming"), show.data=TRUE)
+
+tc.mod.lmer.gs.prev <- lmer(Femur.anom~Tgs.prev.anom_cs*time*elev_cs*SpTiming +
+                         (1|Year:Species),
+                       REML = FALSE, na.action = 'na.fail', 
+                       data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+tc.mod.fig.gs.prev= plot_model(tc.mod.lmer.gs.prev, type = "pred", terms = c("elev_cs","Tgs.prev.anom_cs","time","SpTiming"), show.data=TRUE)
 
 #----------
 #climate model
@@ -150,6 +184,25 @@ c.mod.lmer.sum <- lmer(Femur.anom~Tsum.anom_cs*elev_cs*SpTiming +
                    REML = FALSE, na.action = 'na.fail', 
                    data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
 clim.mod.fig.sum= plot_model(c.mod.lmer.sum, type = "pred", terms = c("Tsum.anom_cs","elev_cs","SpTiming"), show.data=FALSE, title="")
+
+c.mod.lmer.sum.cur <- lmer(Femur.anom~Tsum.cur.anom_cs*elev_cs*SpTiming +
+                         (1|Year:Species),
+                       REML = FALSE, na.action = 'na.fail', 
+                       data = bs.scaled) #[-which(bs.scaled$Species=="X. corallipes"),]
+clim.mod.fig.sum.cur= plot_model(c.mod.lmer.sum.cur, type = "pred", terms = c("Tsum.cur.anom_cs","elev_cs","SpTiming"), show.data=FALSE, title="")
+
+#growing season
+c.mod.lmer.gs <- lmer(Femur.anom~Tgs.anom_cs*elev_cs*SpTiming +
+                         (1|Year:Species),
+                       REML = FALSE, na.action = 'na.fail', 
+                       data = bs.scaled) 
+clim.mod.fig.gs= plot_model(c.mod.lmer.gs, type = "pred", terms = c("Tgs.anom_cs","elev_cs","SpTiming"), show.data=FALSE, title="")
+
+c.mod.lmer.gs.prev <- lmer(Femur.anom~Tgs.prev.anom_cs*elev_cs*SpTiming +
+                        (1|Year:Species),
+                      REML = FALSE, na.action = 'na.fail', 
+                      data = bs.scaled) 
+clim.mod.fig.gs.prev= plot_model(c.mod.lmer.gs.prev, type = "pred", terms = c("Tgs.prev.anom_cs","elev_cs","SpTiming"), show.data=FALSE, title="")
 
 #spring and summer
 c.mod.lmer.ss <- lmer(Femur.anom~Tspr.anom_cs*Tsum.anom_cs*elev_cs*SpTiming +
@@ -198,24 +251,41 @@ time.mod.fig<- time.mod.fig+ theme_bw()+
 clim.mod.fig<- clim.mod.fig+ theme_bw()+
   scale_color_viridis_d(name="elevation")+
   scale_fill_viridis_d(name="elevation")+
-  ylab("Femur length anomaly (mm)")+ xlab("scaled Spring temperature anomally (C)")
+  ylab("Femur length anomaly (mm)")+ xlab("scaled spring temperature anomally (°C)")
 
 clim.mod.fig.sum<- clim.mod.fig.sum+ theme_bw()+
   scale_color_viridis_d(name="elevation")+
   scale_fill_viridis_d(name="elevation")+
-  ylab("Femur length anomaly (mm)")+ xlab("scaled Summer temperature anomally (C)")
+  ylab("Femur length anomaly (mm)")+ xlab("scaled summer temperature anomally (°C)")
+
+clim.mod.fig.sum.cur<- clim.mod.fig.sum.cur+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  ylab("Femur length anomaly (mm)")+ xlab("scaled current summer temperature anomally (°C)")
 
 clim.mod.fig.m<- clim.mod.fig.m+ theme_bw()+
   scale_color_viridis_d(name="elevation")+
   scale_fill_viridis_d(name="elevation")+
-  ylab("Femur length anomaly (mm)")+ xlab("scaled developmental temperature anomally (C)")
+  ylab("Femur length anomaly (mm)")+ xlab("scaled developmental temperature anomally (°C)")
+
+clim.mod.fig.gs<- clim.mod.fig.gs+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  ylab("Femur length anomaly (mm)")+ xlab("scaled growing season temperature anomally (°C)")
+
+clim.mod.fig.gs.prev<- clim.mod.fig.gs.prev+ theme_bw()+
+  scale_color_viridis_d(name="elevation")+
+  scale_fill_viridis_d(name="elevation")+
+  ylab("Femur length anomaly (mm)")+ xlab("scaled previous growing season temperature anomally (°C)")
 
 #add zero lines to model plots
 time.mod.fig= time.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 clim.mod.fig= clim.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 clim.mod.fig.sum= clim.mod.fig.sum+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
+clim.mod.fig.sum.cur= clim.mod.fig.sum.cur+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 clim.mod.fig.m= clim.mod.fig.m+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
-
+clim.mod.fig.gs= clim.mod.fig.gs+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
+clim.mod.fig.gs.prev= clim.mod.fig.gs.prev+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 #--------------
 #Anom plot without sex
 
@@ -282,9 +352,15 @@ bs.all.sum= ddply(bs.all, c("Species", "elev", "Year","SpTiming"), summarise, #c
                   std.anom   = sd(Femur.anom),
                   Tspr.anom = mean(Tspr.mean.anom),
                   Tsum.anom.prev = mean(Tsum.mean.anom.prev),
+                  Tsum.anom = mean(Tsum.mean.anom),
+                  Tgs.anom = mean(Tgs.mean.anom),
+                  Tgs.prev.anom = mean(Tgs.mean.anom.prev),
                   Tmo.anom= mean(Tmo.anom),
                   Tspr.mean = mean(Tspr.mean),
-                  Tsum.prev = mean(Tsum.mean),
+                  Tsum.mean = mean(Tsum.mean),
+                  Tsum.prev = mean(Tsum.mean.prev),
+                  Tgs = mean(Tgs.mean),
+                  Tgs.prev = mean(Tgs.mean.prev),
                   Tmo= mean(Mean.mo)
                   #, springdd.anom = mean(springdd.anom)
 )
@@ -304,7 +380,7 @@ t.labs <- c("Spring", "Previous Summer","Month prev")
 names(t.labs) <- c("Tspr.mean", "Tsum.prev","Tmo")
 
 #Mean not anomaly
-bs.tplot= bs.all.sum[,c("Species","elev","Year","SpTiming","mean.anom","se.anom","time","Tspr.mean","Tsum.prev","Tmo")] #"Sex","SexElev",
+bs.tplot= bs.all.sum[,c("Species","elev","Year","SpTiming","mean.anom","se.anom","time","Tspr.mean","Tsum.prev","Tsum.mean","Tmo", "Tgs", "Tgs.prev")] #"Sex","SexElev",
 
 #rename species timing
 stv<- c("nymphal diapauser","early season","late season")
@@ -359,7 +435,7 @@ plot.Temps.sum=ggplot(data=bs.tplot, aes(x=Tsum.prev, y = mean.anom, group= elev
   scale_fill_viridis_d(na.value=NA, guide="none")+
   scale_color_viridis_d(name="Elevation (m)")+
   #scale_color_brewer(palette = "Spectral") +
-  xlab("Summer temperature (C)") +ylab("Femur length anomaly (mm)")
+  xlab("Summer temperature (°C)") +ylab("Femur length anomaly (mm)")
 
 #add species names to panels
 sdf$x<- 12
@@ -369,6 +445,33 @@ plot.Temps.sum= plot.Temps.sum + geom_text(aes(x, y, label=lab), data=sdf)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig5_summer.pdf",height = 8, width = 8)
 clim.mod.fig.sum + plot.Temps.sum +plot_layout(ncol = 1, heights=c(1,2) )+ 
+  plot_annotation(tag_levels = 'a')
+dev.off()
+
+#=====================
+#same plot for current summer
+
+plot.Temps.sum.cur=ggplot(data=bs.tplot, aes(x=Tsum.mean, y = mean.anom, group= elev, color=factor(elev)) )+
+  facet_grid(SpTord~SpTiming)+ #, scale="free_x"
+  geom_point(size=3, aes(shape=time, fill=factor(elev)))+ #size= sd.anom, #, fill=factor(ifelse(time=="historic", NA, elev))
+  theme_bw()+
+  theme(strip.text.y = element_blank())+ 
+  geom_smooth(method="lm", se=FALSE) +
+  #geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
+  scale_shape_manual(values = c(21,24,25))+
+  scale_fill_viridis_d(na.value=NA, guide="none")+
+  scale_color_viridis_d(name="Elevation (m)")+
+  #scale_color_brewer(palette = "Spectral") +
+  xlab("Current summer temperature (°C)") +ylab("Femur length anomaly (mm)")
+
+#add species names to panels
+sdf$x<- 12
+plot.Temps.sum.cur= plot.Temps.sum.cur + geom_text(aes(x, y, label=lab), data=sdf)
+
+#plot together
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig5_summer_cur.pdf",height = 8, width = 8)
+clim.mod.fig.sum.cur + plot.Temps.sum.cur +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
@@ -386,7 +489,7 @@ plot.Temps.m=ggplot(data=bs.tplot, aes(x=Tmo, y = mean.anom, group= elev, color=
   scale_fill_viridis_d(na.value=NA, guide="none")+
   scale_color_viridis_d(name="Elevation (m)")+
   #scale_color_brewer(palette = "Spectral") +
-  xlab("Developmental temperature (C)") +ylab("Femur length anomaly (mm)")
+  xlab("Developmental temperature (°C)") +ylab("Femur length anomaly (mm)")
 
 #add species names to panels
 sdf$x<- 12
@@ -400,16 +503,74 @@ clim.mod.fig.m + plot.Temps.m +plot_layout(ncol = 1, heights=c(1,2) )+
 dev.off()
 
 #=====================
+#same plot for growing season
+
+plot.Temps.gs=ggplot(data=bs.tplot, aes(x=Tgs, y = mean.anom, group= elev, color=factor(elev)) )+
+  facet_grid(SpTord~SpTiming)+ #, scale="free_x"
+  geom_point(size=3, aes(shape=time, fill=factor(elev)))+ #size= sd.anom, #, fill=factor(ifelse(time=="historic", NA, elev))
+  theme_bw()+
+  theme(strip.text.y = element_blank())+ 
+  geom_smooth(method="lm", se=FALSE) +
+  #geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
+  scale_shape_manual(values = c(21,24,25))+
+  scale_fill_viridis_d(na.value=NA, guide="none")+
+  scale_color_viridis_d(name="Elevation (m)")+
+  #scale_color_brewer(palette = "Spectral") +
+  xlab("Growing season temperature (°C)") +ylab("Femur length anomaly (mm)")
+
+#add species names to panels
+sdf$x<- 12
+plot.Temps.gs= plot.Temps.gs + geom_text(aes(x, y, label=lab), data=sdf)
+
+#plot together
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig5_gs.pdf",height = 8, width = 8)
+clim.mod.fig.gs + plot.Temps.gs +plot_layout(ncol = 1, heights=c(1,2) )+ 
+  plot_annotation(tag_levels = 'a')
+dev.off()
+
+#=====================
+#same plot for previous growing season
+
+plot.Temps.gs.prev=ggplot(data=bs.tplot, aes(x=Tgs.prev, y = mean.anom, group= elev, color=factor(elev)) )+
+  facet_grid(SpTord~SpTiming)+ #, scale="free_x"
+  geom_point(size=3, aes(shape=time, fill=factor(elev)))+ #size= sd.anom, #, fill=factor(ifelse(time=="historic", NA, elev))
+  theme_bw()+
+  theme(strip.text.y = element_blank())+ 
+  geom_smooth(method="lm", se=FALSE) +
+  #geom_errorbar( aes(ymin=mean.anom-se.anom, ymax=mean.anom+se.anom), width=0, col="black")+
+  scale_shape_manual(values = c(21,24,25))+
+  scale_fill_viridis_d(na.value=NA, guide="none")+
+  scale_color_viridis_d(name="Elevation (m)")+
+  #scale_color_brewer(palette = "Spectral") +
+  xlab("Growing season temperature (°C)") +ylab("Femur length anomaly (mm)")
+
+#add species names to panels
+sdf$x<- 12
+plot.Temps.gs.prev= plot.Temps.gs.prev + geom_text(aes(x, y, label=lab), data=sdf)
+
+#plot together
+setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig5_gs_prev.pdf",height = 8, width = 8)
+clim.mod.fig.gs.prev + plot.Temps.gs.prev +plot_layout(ncol = 1, heights=c(1,2) )+ 
+  plot_annotation(tag_levels = 'a')
+dev.off()
+
+#=====================
 #Format ANOVAs
 
 #for(mod.k in c(1,3,4)){ #spring
 #for(mod.k in c(2,3,5)){ #summer
-  for(mod.k in c(7,3,8)){ #month before temperature
+#  for(mod.k in c(7,3,8)){ #month before temperature
+#    for(mod.k in c(9,3,10)){ #gs temperature
+    for(mod.k in c(11,3,12)){ #gs prev temperature
   
 #time + climate
 if(mod.k==1) mod.lmer<- tc.mod.lmer
 if(mod.k==2) mod.lmer<- tc.mod.lmer.sum  
 if(mod.k==7) mod.lmer<- tc.mod.lmer.m
+if(mod.k==9) mod.lmer<- tc.mod.lmer.gs
+if(mod.k==11) mod.lmer<- tc.mod.lmer.gs.prev
 #time
 if(mod.k==3) mod.lmer<- time.mod.lmer
 #climate
@@ -417,6 +578,8 @@ if(mod.k==4) mod.lmer<- c.mod.lmer
 if(mod.k==5) mod.lmer<- c.mod.lmer.sum
 if(mod.k==6) mod.lmer<- c.mod.lmer.ss
 if(mod.k==8) mod.lmer<- c.mod.lmer.m
+if(mod.k==10) mod.lmer<- c.mod.lmer.gs
+if(mod.k==12) mod.lmer<- c.mod.lmer.gs.prev
 
 aov1= tidy(anova(mod.lmer))
 aov1$sig=""
@@ -425,9 +588,9 @@ aov1$sig[aov1$p.value<0.01]="**"
 aov1$sig[aov1$p.value<0.001]="***"
 aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 
-if(mod.k %in% c(1,2,7)){ terms=aov1$term; stats=aov1[c(5:8)]; aov.tab= aov1[,c(1,4)]} 
+if(mod.k %in% c(1,2,7,9,11)){ terms=aov1$term; stats=aov1[c(5:8)]; aov.tab= aov1[,c(1,4)]} 
 
-if(mod.k %in% c(3,4,5,6,8)){
+if(mod.k %in% c(3,4,5,6,8,10,12)){
   match1=match(aov1$term, terms)
   aov.add<-as.data.frame(matrix(NA, nrow=length(terms), ncol=4))
   aov.add[match1,]= aov1[,5:8]
@@ -442,18 +605,35 @@ aov.tab= cbind(aov.tab, stats)
 setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 #write_csv(aov.tab, 'anovas.csv')
 #write_csv(aov.tab, 'anovas_summer.csv')
-write_csv(aov.tab, 'anovas_mo.csv')
+#write_csv(aov.tab, 'anovas_mo.csv')
+#write_csv(aov.tab, 'anovas_gs.csv')
+write_csv(aov.tab, 'anovas_gs_prev.csv')
 
 coef(mod.lmer) #random effects
 plot_model(mod.lmer, type = "slope")
 
 #compare AICs
 summary(time.mod.lmer)$AICtab
+
+#c current year: gs best by aic
 summary(c.mod.lmer)$AICtab
-summary(c.mod.lmer.sum)$AICtab
-summary(c.mod.lmer.ss)$AICtab
+summary(c.mod.lmer.sum.cur)$AICtab
+summary(c.mod.lmer.gs)$AICtab
 summary(c.mod.lmer.m)$AICtab
+
+#c prev year
+summary(c.mod.lmer.sum)$AICtab
+summary(c.mod.lmer.gs.prev)$AICtab
+
+#tc past summer best
+#tc current year
 summary(tc.mod.lmer)$AICtab
-summary(tc.mod.lmer.sum)$AICtab
+summary(tc.mod.lmer.sum.cur)$AICtab
+summary(tc.mod.lmer.gs)$AICtab
 summary(tc.mod.lmer.m)$AICtab
+
+#tc prev year
+summary(tc.mod.lmer.sum)$AICtab
+summary(tc.mod.lmer.gs.prev)$AICtab
+
 

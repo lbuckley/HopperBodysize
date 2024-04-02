@@ -463,10 +463,10 @@ clim.sum$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
 #growing season means, doy 60-243:
 clim.gs= aggregate(clim[which(clim$Julian %in% 60:243),c("Max","Mean","Min","filled")], list(clim$Site[which(clim$Julian %in% 60:243)], clim$Year[which(clim$Julian %in% 60:243)]), FUN=mean)
 names(clim.gs)[1:2]=c("Site","Year")
-clim.gs$Seas="summer"
+clim.gs$Seas="gs"
 clim.gs$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
 
-clim.seas= rbind(clim.spr, clim.sum)
+clim.seas= rbind(clim.spr, clim.sum, clim.gs)
 
 #plot
 clim.seas$Year= as.numeric(clim.seas$Year)
@@ -528,6 +528,15 @@ bs.all$Tsum.min.anom= clim.seas$Min.anom[which(clim.seas$Seas=="summer")][match1
 bs.all$Tsum.max.anom= clim.seas$Max.anom[which(clim.seas$Seas=="summer")][match1]
 bs.all$Tsum.mean.anom= clim.seas$Mean.anom[which(clim.seas$Seas=="summer")][match1]
 
+match1= match(bs.all$SiteYr, clim.seas[which(clim.seas$Seas=="gs"),"SiteYr"])
+bs.all$Tgs.min= clim.seas$Min[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.max= clim.seas$Max[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.mean= clim.seas$Mean[which(clim.seas$Seas=="gs")][match1]
+
+bs.all$Tgs.min.anom= clim.seas$Min.anom[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.max.anom= clim.seas$Max.anom[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.mean.anom= clim.seas$Mean.anom[which(clim.seas$Seas=="gs")][match1]
+
 #spring and summer year before
 match1= match(bs.all$SiteYrPrev, clim.seas[which(clim.seas$Seas=="spring"),"SiteYr"])
 bs.all$Tspr.min.prev= clim.seas$Min[which(clim.seas$Seas=="spring")][match1]
@@ -546,6 +555,15 @@ bs.all$Tsum.mean.prev= clim.seas$Mean[which(clim.seas$Seas=="summer")][match1]
 bs.all$Tsum.min.anom.prev= clim.seas$Min.anom[which(clim.seas$Seas=="summer")][match1]
 bs.all$Tsum.max.anom.prev= clim.seas$Max.anom[which(clim.seas$Seas=="summer")][match1]
 bs.all$Tsum.mean.anom.prev= clim.seas$Mean.anom[which(clim.seas$Seas=="summer")][match1]
+
+match1= match(bs.all$SiteYrPrev, clim.seas[which(clim.seas$Seas=="gs"),"SiteYr"])
+bs.all$Tgs.min.prev= clim.seas$Min[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.max.prev= clim.seas$Max[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.mean.prev= clim.seas$Mean[which(clim.seas$Seas=="gs")][match1]
+
+bs.all$Tgs.min.anom.prev= clim.seas$Min.anom[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.max.anom.prev= clim.seas$Max.anom[which(clim.seas$Seas=="gs")][match1]
+bs.all$Tgs.mean.anom.prev= clim.seas$Mean.anom[which(clim.seas$Seas=="gs")][match1]
 
 #add temp 4 weeks before specimen date
 clim.month <- clim %>%
