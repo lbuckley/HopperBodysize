@@ -460,6 +460,12 @@ names(clim.sum)[1:2]=c("Site","Year")
 clim.sum$Seas="summer"
 clim.sum$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
 
+#growing season means, doy 60-243:
+clim.gs= aggregate(clim[which(clim$Julian %in% 60:243),c("Max","Mean","Min","filled")], list(clim$Site[which(clim$Julian %in% 60:243)], clim$Year[which(clim$Julian %in% 60:243)]), FUN=mean)
+names(clim.gs)[1:2]=c("Site","Year")
+clim.gs$Seas="summer"
+clim.gs$SiteYr= paste(clim.sum$Site, clim.sum$Year, sep="_")
+
 clim.seas= rbind(clim.spr, clim.sum)
 
 #plot
