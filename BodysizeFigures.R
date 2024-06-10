@@ -13,7 +13,8 @@ library(lmerTest)
 #library(MuMIn)
 
 #Read data
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.sub= read.csv("BodySize_sub.csv")
 bs.unmatched= read.csv("BodySize_unmatched.csv" )
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
@@ -133,7 +134,8 @@ anom.plot= anom.plot +
   xlim(1700,4000)
 
 #Save figure 1
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig1_SizeByElevTime.pdf",height = 15, width = 15)
 elev.plot.hist + elev.plot.current + anom.plot + 
   plot_layout(widths = c(1, 1, 0.8))
@@ -168,8 +170,8 @@ clim.plot.anom= ggplot(data=clim.seas, aes(x=Year, y = Mean.anom, color=factor(e
   ylab("Mean Temperature (C)")+
   scale_shape_manual(values=c(16,1))
 
-#Save figure 2
-pdf("Fig2_Climate.pdf",height = 6, width = 8)
+#Save figure
+pdf("Fig_Climate.pdf",height = 6, width = 8)
 clim.plot
 dev.off()
 
@@ -185,7 +187,7 @@ mod.lm <- lm(Mean~Year*elev, data = clim.seas[which(clim.seas$Seas=="summer"),])
 anova(mod.lm)
 
 #---------------------
-#Figure 3. Temperature anomalies
+#Figure. Temperature anomalies
 
 #add mean and se
 bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
@@ -255,10 +257,10 @@ plot.Temps=ggplot(data=bs.tplot.long, aes(x=Temperature, y = mean.anom, group= e
   #scale_color_brewer(palette = "Spectral") +
   xlab("Temperature (C)") +ylab("Femur length anomaly (mm)")
 
-pdf("Fig3_SizeByTemp_simple.pdf",height = 8, width = 8)
+pdf("Fig_SizeByTemp_simple.pdf",height = 8, width = 8)
 plot.Temps
 dev.off()
 
 #---------------------
-#Figure 4. Phenology
+#Phenology
 #See PhenologyAnalysis

@@ -13,7 +13,8 @@ library(lmerTest)
 #library(MuMIn)
 
 #Read data
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.sub= read.csv("BodySize_sub.csv")
 bs.unmatched= read.csv("BodySize_unmatched.csv" )
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
@@ -92,13 +93,14 @@ spec_patch<- wrap_elements(spec_patch)+
   )
 
 #save
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 pdf("Fig2_both.pdf",height = 8, width = 10)
 spec_patch
 dev.off()
 
 #---------------------
-#Figure 3. Climate trends
+#Figure 1. Climate trends
 
 elevs.sites= c("NOAA", "A1","B1","C1","D1")
 elevs= c(1672, 2134, 2591, 3048, 3566)
@@ -127,8 +129,8 @@ clim.plot.anom= ggplot(data=clim.seas[clim.seas$Seas=="spring",], aes(x=Year, y 
   scale_shape_manual(values=c(16,1))+ 
   guides(fill = "none")
 
-#Save figure 3
-pdf("Fig3_Climate.pdf",height = 6, width = 8)
+#Save climate figure
+pdf("Fig_Climate.pdf",height = 6, width = 8)
 clim.plot + clim.plot.anom + plot_annotation(tag_levels = 'a')
 dev.off()
 
@@ -152,8 +154,8 @@ clim.plot.anom.sum= ggplot(data=clim.seas[clim.seas$Seas=="summer",], aes(x=Year
   scale_shape_manual(values=c(16,1))+ 
   guides(fill = "none")
 
-#Save figure 3 sup
-pdf("Fig3_Climate_sum.pdf",height = 6, width = 8)
+#Save figure sup
+pdf("Fig_Climate_sum.pdf",height = 6, width = 8)
 clim.plot.sum + clim.plot.anom.sum + plot_annotation(tag_levels = 'a')
 dev.off()
 
@@ -178,8 +180,8 @@ clim.plot.anom.gs= ggplot(data=clim.seas[clim.seas$Seas=="gs",], aes(x=Year, y =
   scale_shape_manual(values=c(16,1))+ 
   guides(fill = "none")
 
-#Save figure 3
-pdf("Fig3_gsClimate.pdf",height = 6, width = 8)
+#Save figure 1
+pdf("Fig1_gsClimate.pdf",height = 6, width = 8)
 clim.plot.gs + clim.plot.anom.gs + plot_annotation(tag_levels = 'a')
 dev.off()
 

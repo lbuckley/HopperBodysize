@@ -13,7 +13,8 @@ library(tidyverse)
 library(broom)
 library(performance)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 
 specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
@@ -109,11 +110,12 @@ stat.mat$sig[stat.mat$p.value<0.001]="***"
 stat.mat[,c(2:4,6:7)]= round(stat.mat[,c(2:4,6:7)],2)
 stat.mat$var= rownames(stat.mat)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( stat.mat, 'species_slope.csv')
 
 #--------------
-#Fig 4 analysis
+#Fig analysis
 
 #time model
 mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
@@ -333,14 +335,15 @@ anom.plot= anom.plot + geom_text(aes(x, y, label=lab), data=sdf, color="black")
 anom.plot= anom.plot+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig4Anom_noSex.pdf",height = 8, width = 8)
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig3Anom_noSex.pdf",height = 8, width = 8)
 time.mod.fig + anom.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #------------
-#Figure 5
+#Figure 4
 
 #add mean and se
 bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
@@ -415,8 +418,7 @@ plot.Temps.all= plot.Temps.all + geom_text(aes(x, y, label=lab), data=sdf)
 plot.Temps.all= plot.Temps.all+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig5.pdf",height = 8, width = 8)
+pdf("Fig4.pdf",height = 8, width = 8)
 clim.mod.fig + plot.Temps.all +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -442,8 +444,7 @@ sdf$x<- 12
 plot.Temps.sum= plot.Temps.sum + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig5_summer.pdf",height = 8, width = 8)
+pdf("Fig4_summer.pdf",height = 8, width = 8)
 clim.mod.fig.sum + plot.Temps.sum +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -469,8 +470,7 @@ sdf$x<- 12
 plot.Temps.sum.cur= plot.Temps.sum.cur + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig5_summer_cur.pdf",height = 8, width = 8)
+pdf("Fig4_summer_cur.pdf",height = 8, width = 8)
 clim.mod.fig.sum.cur + plot.Temps.sum.cur +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -496,8 +496,7 @@ sdf$x<- 12
 plot.Temps.m= plot.Temps.m + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig5_month.pdf",height = 8, width = 8)
+pdf("Fig4_month.pdf",height = 8, width = 8)
 clim.mod.fig.m + plot.Temps.m +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -523,8 +522,7 @@ sdf$x<- 12
 plot.Temps.gs= plot.Temps.gs + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig5_gs.pdf",height = 8, width = 8)
+pdf("Fig4_gs.pdf",height = 8, width = 8)
 clim.mod.fig.gs + plot.Temps.gs +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -550,8 +548,7 @@ sdf$x<- 12
 plot.Temps.gs.prev= plot.Temps.gs.prev + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig5_gs_prev.pdf",height = 8, width = 8)
+pdf("Fig4_gs_prev.pdf",height = 8, width = 8)
 clim.mod.fig.gs.prev + plot.Temps.gs.prev +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -602,7 +599,8 @@ if(mod.k %in% c(3,4,5,6,8,10,12)){
 #add time+ climate data
 aov.tab= cbind(aov.tab, stats)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 #write_csv(aov.tab, 'anovas.csv')
 #write_csv(aov.tab, 'anovas_summer.csv')
 #write_csv(aov.tab, 'anovas_mo.csv')
