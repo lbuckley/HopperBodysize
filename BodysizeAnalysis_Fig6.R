@@ -1,11 +1,9 @@
 library(stringr)
 
 #relate to phenology
-
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
-
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperPhenSynch/data/")
 dat.all= read.csv("HopperData_Sept2019_forPhenOverlap.csv")
 
 #find unique spsiteyr
@@ -112,8 +110,9 @@ phen.mod.fig<- phen.mod.fig+ theme_bw()+
 phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("FigS4_SizeDoy_surveys.pdf",height = 8, width = 8)
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("FigS5_SizeDoy_surveys.pdf",height = 8, width = 8)
 phen.mod.fig + plot.doy +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -226,8 +225,7 @@ phen.mod.fig<- phen.mod.fig+ theme_bw()+
 phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-pdf("Fig6.pdf",height = 8, width = 8)
+pdf("Fig5.pdf",height = 8, width = 8)
 phen.mod.fig + bs.phen.yr.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -242,5 +240,6 @@ aov1$sig[aov1$p.value<0.01]="**"
 aov1$sig[aov1$p.value<0.001]="***"
 aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
 write_csv( aov1, 'phenology_doy_anova.csv')

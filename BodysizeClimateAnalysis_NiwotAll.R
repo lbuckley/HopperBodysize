@@ -13,7 +13,8 @@ library(tidyverse)
 library(broom)
 library(performance)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_wClim_plusNiwot.csv" )
 
 specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
@@ -65,12 +66,12 @@ stats= array(data=NA, dim=c(length(specs),3,6),
 
 for(spec.k in 1:length(specs)){
   
-  mod.lmer <- lmer(Mean_Femur~elev_cs*Sex +
+  mod.lmer <- lmer(Mean_Femur~elev_cs+Sex +
                      (1|Year:Sites),
                    REML = FALSE, na.action = 'na.fail', 
-                   data = bs.scaled[which(bs.scaled$Species==specs[spec.k]),]) 
+                   data = bs.scaled[which(bs.scaled$Species==specs[spec.k] & bs.scaled$time=="historic"),]) 
   
-  stats[spec.k,,]=cbind(coef(summary(mod.lmer))[2:nrow(coef(summary(mod.lmer))),1:2],
+  stats[spec.k,1:2,]=cbind(coef(summary(mod.lmer))[2:nrow(coef(summary(mod.lmer))),1:2],
                            as.matrix(anova(mod.lmer))[,c("Sum Sq","NumDF","F value","Pr(>F)")])
 } #end loop specs 
 
@@ -85,8 +86,9 @@ stat.mat$sig[stat.mat$p.value<0.001]="***"
 stat.mat[,c(2:4,6:7)]= round(stat.mat[,c(2:4,6:7)],2)
 stat.mat$var= rownames(stat.mat)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
-write_csv( stat.mat, 'species_slope.csv')
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
+write_csv( stat.mat, 'species_slope_hist.csv')
 
 #--------------
 #time model
