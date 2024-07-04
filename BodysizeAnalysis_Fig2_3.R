@@ -60,8 +60,8 @@ elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Fe
   geom_point(position=jdodge, aes(shape=Sex))+
   theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex), show.legend = FALSE)+
   geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
-  scale_fill_manual(values= c("cadetblue","darkorange"))+
-  scale_color_manual(values= c("cadetblue","darkorange"))+
+  scale_fill_manual(values= c("darkorange", "cadetblue"))+
+  scale_color_manual(values= c("darkorange", "cadetblue"))+
   scale_shape_manual(values=c(21,24,25))+
   xlab("Elevation (m)")+
   ylab("Femur length (mm)")+
