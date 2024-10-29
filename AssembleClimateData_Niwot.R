@@ -11,7 +11,8 @@ library(plyr)
 library(TrenchR)
 library(reshape2)
 
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
 bs.all= read.csv("BodySize_sub.csv")
 #bs.all= read.csv("BodySize_all.csv")
 
@@ -32,7 +33,8 @@ bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]
 
 #----------
 #Boulder data monthly
-setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData/NOAA/")
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData/NOAA/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData/NOAA/")
 clim.max= read.csv("NOAA_Boulder_monthly_max.csv")
 clim.means= read.csv("NOAA_Boulder_monthly_means.csv")
 clim.min= read.csv("NOAA_Boulder_monthly_min.csv")

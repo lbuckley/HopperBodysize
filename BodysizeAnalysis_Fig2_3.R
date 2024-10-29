@@ -56,6 +56,35 @@ bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 sdf= data.frame(x=-1, y=1, lab=specs, SpTord=c(1,2,1,2,1,2), SpTiming=c(stv[c(1,1,2,2,3,3)]), elev=1768, vjust=1)
 sdf$SpTiming<- factor(sdf$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
 
+#normalize to mean during historic period
+bs.hist= ddply(bs.all[bs.all$time=="historic",], c("Species"), summarise,
+              N    = length(Mean_Femur),
+              mean = mean(Mean_Femur),
+              sd   = sd(Mean_Femur) )
+
+bs.percent= bs.all
+match1<- match(bs.percent$Species, bs.percent$Species)
+bs.percent$Femur.per= (bs.percent$Mean_Femur - bs.hist$mean[match1])/ bs.hist$mean[match1]
+
+plot_fe<- function(species) {
+  elev.plot= ggplot(data=bs.percent[bs.percent$Species==species,], aes(x=elev, y = Femur.per, group= SexTime, color=time, fill=time)) +
+    geom_point(position=jdodge, aes(shape=Sex))+
+    theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex), show.legend = FALSE)+
+    geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
+    scale_fill_manual(values= c("darkorange", "cadetblue"))+
+    scale_color_manual(values= c("darkorange", "cadetblue"))+
+    scale_shape_manual(values=c(21,24,25))+
+    xlab("Elevation (m)")+
+    ylab("Femur length (mm)")+
+    labs(title=substitute(italic(x), list(x=species)))
+  
+  elev.plot + 
+    geom_errorbar(data=bs.sum[bs.sum$Species==species,], position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+    geom_point(data=bs.sum[bs.sum$Species==species,], position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
+  #+geom_label(label=species, x=2000, y=12, color="black", label.size=0.5)
+}
+#---
+
 plot_fe<- function(species) {
 elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
   geom_point(position=jdodge, aes(shape=Sex))+
