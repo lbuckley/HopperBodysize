@@ -31,6 +31,10 @@ names(bs.size.m)[1]<-"SpecElevSex"
 match1= match(bs.all$SpecElevSex, bs.size.m$SpecElevSex)
 bs.all$Femur.anom= bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1]
 
+#estimate percent change
+bs.all$f.per.change= (bs.all$Mean_Femur - bs.size.m$Mean_Femur[match1])/bs.size.m$Mean_Femur[match1]
+mean(bs.all[which(bs.all$time=="current"),"f.per.change"], na.rm=TRUE)
+
 #----------
 #Boulder data monthly
 setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/ClimateData/NOAA/")

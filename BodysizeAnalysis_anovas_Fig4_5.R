@@ -125,6 +125,8 @@ mod.lmer <- lmer(Femur.anom~time*elev_cs*Sex*SpTiming +
 plot_model(mod.lmer, type = "pred", terms = c("elev_cs","time", "SpTiming"), show.data=TRUE)
 
 #time model without sex
+bs.scaled$time<- factor(bs.scaled$time, levels=c("current","historic"), ordered=TRUE)
+
 time.mod.lmer <- lmer(Femur.anom~time*elev_cs*SpTiming +
                    (1|Year:Species),
                  REML = FALSE,
@@ -246,8 +248,10 @@ plot_model(mod.lmer, type = "int")
 
 #update model plots
 time.mod.fig<- time.mod.fig+ theme_bw()+
-  scale_color_viridis_d(name="time period")+
-  scale_fill_viridis_d(name="time period")+
+  #scale_color_viridis_d(name="time period")+
+  #scale_fill_viridis_d(name="time period")+
+  scale_fill_manual(name="time period", values= c("darkorange","cadetblue"))+
+  scale_color_manual(name="time period", values= c("darkorange","cadetblue"))+
   ylab("Femur length anomaly (mm)")+ xlab("scaled Elevation (m)")
 
 clim.mod.fig<- clim.mod.fig+ theme_bw()+
@@ -313,7 +317,7 @@ anom.plot= ggplot(data=bs.sum, aes(x=elev, y = mean, color=time, fill=time)) +
   geom_point(position=dodge, size=3)+ #, col="black"
   theme_bw()+ 
   # geom_smooth(method="lm", se=FALSE, aes(lty=Sex))+ 
-  theme(axis.title=element_text(size=16))+
+  theme(axis.title=element_text(size=14))+
   theme(strip.text.y = element_blank())+ 
   scale_fill_manual(values= c("darkorange","cadetblue"))+
   scale_color_manual(values= c("darkorange","cadetblue"))+
@@ -416,6 +420,9 @@ plot.Temps.all= plot.Temps.all + geom_text(aes(x, y, label=lab), data=sdf)
 
 #add zero lines
 plot.Temps.all= plot.Temps.all+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
+
+#add note to clim.mod.fig
+
 
 #plot together
 pdf("Fig4.pdf",height = 8, width = 8)

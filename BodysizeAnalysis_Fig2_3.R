@@ -56,15 +56,23 @@ bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 sdf= data.frame(x=-1, y=1, lab=specs, SpTord=c(1,2,1,2,1,2), SpTiming=c(stv[c(1,1,2,2,3,3)]), elev=1768, vjust=1)
 sdf$SpTiming<- factor(sdf$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
 
+#---------
 #normalize to mean during historic period
 bs.hist= ddply(bs.all[bs.all$time=="historic",], c("Species"), summarise,
               N    = length(Mean_Femur),
               mean = mean(Mean_Femur),
               sd   = sd(Mean_Femur) )
+bs.hist$se= bs.hist$sd / sqrt(bs.hist$N)
 
 bs.percent= bs.all
-match1<- match(bs.percent$Species, bs.percent$Species)
+match1<- match(bs.percent$Species, bs.hist$Species)
 bs.percent$Femur.per= (bs.percent$Mean_Femur - bs.hist$mean[match1])/ bs.hist$mean[match1]
+
+bs.sum.per= ddply(bs.percent, c("Species", "elev", "SpTiming", "SpTord", "Sex","time","SexTime"), summarise,
+              N    = length(Femur.per),
+              mean = mean(Femur.per),
+              sd   = sd(Femur.per) )
+bs.sum.per$se= bs.sum.per$sd / sqrt(bs.sum.per$N)
 
 plot_fe<- function(species) {
   elev.plot= ggplot(data=bs.percent[bs.percent$Species==species,], aes(x=elev, y = Femur.per, group= SexTime, color=time, fill=time)) +
@@ -75,15 +83,43 @@ plot_fe<- function(species) {
     scale_color_manual(values= c("darkorange", "cadetblue"))+
     scale_shape_manual(values=c(21,24,25))+
     xlab("Elevation (m)")+
-    ylab("Femur length (mm)")+
-    labs(title=substitute(italic(x), list(x=species)))
-  
+    ylab("Femur length differential")+
+    labs(title=substitute(italic(x), list(x=species)))+
+    ylim(-0.25,0.3) #+xlim(1500, 4000)
+    
   elev.plot + 
-    geom_errorbar(data=bs.sum[bs.sum$Species==species,], position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
-    geom_point(data=bs.sum[bs.sum$Species==species,], position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
+    geom_errorbar(data=bs.sum.per[bs.sum.per$Species==species,], position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+    geom_point(data=bs.sum.per[bs.sum.per$Species==species,], position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
   #+geom_label(label=species, x=2000, y=12, color="black", label.size=0.5)
 }
-#---
+
+#combine in patchwork
+spec_patch <- plot_fe(specs[1]) +plot_fe(specs[3]) +plot_fe(specs[5]) +
+  plot_fe(specs[2]) +plot_fe(specs[4]) +plot_fe(specs[6]) +
+  plot_layout(ncol = 3, guides="collect") & ylab(NULL) & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 0, 0))
+
+spec_patch<- wrap_elements(spec_patch)+
+  plot_annotation(title = "   nymphal diapauser           early season                     late season",
+                  caption= "Elevation (m)") &
+  theme(plot.title = element_text(size = rel(1.5) ),
+        plot.caption = element_text(vjust = 1, hjust = 0.5, size = rel(1.5) ) )
+
+spec_patch<- wrap_elements(spec_patch)+
+  labs(tag = "Femur length differential") +
+  theme(
+    plot.tag = element_text(size = rel(1.5), angle = 90),
+    plot.tag.position = "left"
+  )
+
+#save
+setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
+pdf("Fig2_both_percent.pdf",height = 8, width = 10)
+spec_patch
+dev.off()
+
+#------
+#Raw values for supplement
 
 plot_fe<- function(species) {
 elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
