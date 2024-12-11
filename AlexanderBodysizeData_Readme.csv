@@ -1,0 +1,95 @@
+title,attributeName,attributeLabel,attributeDefinition,storageType,formatString,unit,missingValueCode,notes
+AlexanderBodySize_all,Species,Species,species name with abbreviated genus,character,,,NA,
+AlexanderBodySize_all,Sites,Sites,site abbreviation,character,,,NA,
+AlexanderBodySize_all,Year,Year,collection year,numeric,YYYY,,NA,
+AlexanderBodySize_all,Project information,Project_info,name of project collecting data,character,,,NA,
+AlexanderBodySize_all,Sex,Sex,sex: M or F,character,"M, F",,NA,
+AlexanderBodySize_all,Specimen Number,Specimen_No,specimen index within project,numeric,,,NA,
+AlexanderBodySize_all,Barcode,Barcode,CU Museum barcode number,numeric,,,NA,
+AlexanderBodySize_all,R_Femur1,R_Femur1,length of 1st right femur,numeric,,mm,NA,
+AlexanderBodySize_all,R_Femur2,R_Femur2,length of 2nd right femur,numeric,,mm,NA,
+AlexanderBodySize_all,L_Femur1,L_Femur1,length of 1st left femur,numeric,,mm,NA,
+AlexanderBodySize_all,L_Femur2,L_Femur2,length of 2nd left femur,numeric,,mm,NA,
+AlexanderBodySize_all,Mean Femur,Mean_Femur,mean femur length,numeric,,mm,NA,
+AlexanderBodySize_all,Mass,Mass,mass,numeric,,g,NA,
+AlexanderBodySize_all,time,time,time period,character,"current, historic",,NA,
+AlexanderBodySize_all,elev,elev,site elevation,numeric,,m,NA,
+AlexanderBodySize_wClimate,Species,Species,species name with abbreviated genus,character,,,NA,
+AlexanderBodySize_wClimate,Sites,Sites,site abbreviation,character,,,NA,
+AlexanderBodySize_wClimate,Year,Year,collection year,numeric,YYYY,,NA,
+AlexanderBodySize_wClimate,Project information,Project_info,name of project collecting data,character,,,NA,
+AlexanderBodySize_wClimate,Sex,Sex,sex: M or F,character,"M, F",,NA,
+AlexanderBodySize_wClimate,Specimen Number,Specimen_No,specimen index within project,numeric,,,NA,
+AlexanderBodySize_wClimate,Barcode,Barcode,CU Museum barcode number,numeric,,,NA,
+AlexanderBodySize_wClimate,R_Femur1,R_Femur1,length of 1st right femur,numeric,,mm,NA,
+AlexanderBodySize_wClimate,R_Femur2,R_Femur2,length of 2nd right femur,numeric,,mm,NA,
+AlexanderBodySize_wClimate,L_Femur1,L_Femur1,length of 1st left femur,numeric,,mm,NA,
+AlexanderBodySize_wClimate,L_Femur2,L_Femur2,length of 2nd left femur,numeric,,mm,NA,
+AlexanderBodySize_wClimate,Mean Femur,Mean_Femur,mean femur length,numeric,,mm,NA,
+AlexanderBodySize_wClimate,Mass,Mass,mass,numeric,,g,NA,
+AlexanderBodySize_wClimate,time,time,time period,character,"current, historic",,NA,
+AlexanderBodySize_wClimate,elev,elev,site elevation,numeric,,m,NA,
+AlexanderBodySize_wClimate,SpecElevSex,SpecElevSex,"concatenation of Species, elev, Sex for indexing",character,,,NA,
+AlexanderBodySize_wClimate,Femur anomaly,Femur.anom,"femur length anomaly by species, site, sex",numeric,,mm,NA,
+AlexanderBodySize_wClimate,ClimSite,ClimSite,site source of climate data,character,,,NA,
+AlexanderBodySize_wClimate,Tspr mean,Tspr.mean,mean of daily mean temperature across spring,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tspr mean anomalie,Tspr.mean.anom,anomaly of mean of daily mean temperature across spring,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tsum mean,Tsum.mean,mean of daily mean temperature across summer,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tsum mean anomalie,Tsum.mean.anom,anomaly of mean of daily mean temperature across summer,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tsum previous mean,Tsum.mean.prev,mean of previous year daily mean temperature across summer,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tsum previous mean anomalie,Tsum.mean.anom.prev,anomaly of mean of previous year daily mean temperature across summer,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Date Collected,DateCollected,date collected,date,M/D/YY,,NA,
+AlexanderBodySize_wClimate,month,month,month,numeric,M,,NA,
+AlexanderBodySize_wClimate,day,day,day,numeric,D,,NA,
+AlexanderBodySize_wClimate,year,year,year,numeric,YYYY,,NA,
+AlexanderBodySize_wClimate,time period,timeperiod,time period,character,"current, historic",,NA,
+AlexanderBodySize_wClimate,doy_spec,doy_spec,day of year of specimen collection,numeric,,,NA,
+AlexanderBodySize_wClimate,SpElev,SpElev,concatenation of Species and elev for indexing,character,,,NA,
+AlexanderBodySize_wClimate,Tmonth mean,Mean.mo,mean of daily mean temperature across the month before collection,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tmonth mean anomaly,Tmo.anom,anomaly of mean of daily mean temperature across the month before collection,numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Species Timing,SpTiming,seasonal timing of species,character,"nymph, early, late",,NA,
+AlexanderBodySize_wClimate,Tgs mean,Tgs.mean,"mean of daily mean temperature across the growing season (March through August, doy 60 to 243)",numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tgs mean anomaly,Tgs.mean.anom,"anomaly of mean of daily mean temperature across the growing season (March through August, doy 60 to 243)",numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tgs previous mean,Tgs.mean.prev,"mean of daily mean temperature across the previous growing season (March through August, doy 60 to 243)",numeric,,degree Celcius,NA,
+AlexanderBodySize_wClimate,Tgs previous mean anomaly,Tgs.mean.anom.prev,"anomaly of mean of daily mean temperature across the previous growing season (March through August, doy 60 to 243)",numeric,,degree Celcius,NA,
+HopperData_Sept2019,ordinal date,ordinal,ordinal date of survey,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,species,species,species name,character,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,in6,in6,number of adult individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,in5,in5,number of 5th instar individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,in4,in4,number of 4th instar individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,in3,in3,number of 3rd instar individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,in2,in2,number of 2nd instar individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,in1,in1,number of 1st instar individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,total,total,total number of individuals,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,year,year,year,numeric,YYYY,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,site,site,sites,character,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,DI,DI,development index,numeric,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,elev,elev,site elevation,numeric,,m,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,spsiteyear,spsiteyear,"concatenation of species, site, year for indexing",character,,,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,doy_adult,doy_adult,"doy of year of adulthood for species, site, year",numeric,,degree Celcius,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+HopperData_Sept2019,gdd_adult,gdd_adult,"growing degree days at adulthood for species, site, year",numeric,,degree Celcius,NA,Data from Buckley et al. 2021. Journal of Animal Ecology https://doi.org/10.1111/1365-2656.13451
+Levy_FemaleGradientDataGrasshopper,ID,ID,ID from collection,numeric,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,Species,Species,species,character,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,Site,Site,site,character,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,Femur_mm,Femur_mm,femur length,numeric,,mm,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,ClutchSize,ClutchSize,clutch size,numeric,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,EggMass,EggMass,egg mass,numeric,,g,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,NOvarioles,NOvarioles,number ovarioles,numeric,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,NFunctOvarioles,NFunctOvarioles,number of functional ovarioles,numeric,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,PropFunctOvarioles,PropFunctOvarioles,proportion of functional ovarioles,numeric,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,Elevation_m,Elevation_m,elevation,numeric,,m,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,log Eggs,logEggs,log number of eggs,numeric,,,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+Levy_FemaleGradientDataGrasshopper,ClutchMass_g,ClutchMass_g,clutch mass,numeric,,g,NA,Data from Levy and Nufio. 2024. Oikos https://doi.org/10.1111/oik.01615
+NiwotClimateFilled,Site,Site,site,character,,,NA,
+NiwotClimateFilled,Year,Year,year,numeric,YYYY,,NA,
+NiwotClimateFilled,Max,Max,mean of max daily temperature,numeric,,degree Celcius,NA,
+NiwotClimateFilled,Mean,Mean,mean of mean daily temperature,numeric,,degree Celcius,NA,
+NiwotClimateFilled,Min,Min,mean of min daily temperature,numeric,,degree Celcius,NA,
+NiwotClimateFilled,filled,filled,filled? 0: no; 1: yes,numeric,"0, 1",,NA,
+NiwotClimateFilled,Seas,Seas,"season (spring, summer, gs: growing season)",character,,,NA,
+NiwotClimateFilled,SiteYr,SiteYr,"concatenation of site, year for indexing",character,,,NA,
+NiwotClimateFilled,SiteSeas,SiteSeas,"concatenation of site, season for indexing",character,,,NA,
+NiwotClimateFilled,SiteYrSeas,SiteYrSeas,"concatenation of site, year, season for indexing",character,,,NA,
+NiwotClimateFilled,Max.anom,Max.anom,anomaly of mean of max daily temperature,numeric,,degree Celcius,NA,
+NiwotClimateFilled,Min.anom,Min.anom,anomaly of mean of min daily temperature,numeric,,degree Celcius,NA,
+NiwotClimateFilled,Mean.anom,Mean.anom,anomaly of mean of mean daily temperature,numeric,,degree Celcius,NA,
