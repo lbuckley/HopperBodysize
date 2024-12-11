@@ -17,19 +17,18 @@ library(broom)
 library(performance)
 
 #Read data
-#setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
-#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/data/")
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperBodysize/data/")
-bs.unmatched= read.csv("AlexanderBodySize_all.csv")
-bs.all= read.csv("AlexanderBodySize_wClimate.csv")
-clim.seas=read.csv("NiwotClimateFilled.csv")
-dat.all= read.csv("HopperData_Sept2019.csv")
-repro= read.csv("Levy_FemaleGradientDataGrasshopper.csv")
+bs.unmatched= read.csv("data/AlexanderBodySize_all.csv")
+bs.all= read.csv("data/AlexanderBodySize_wClimate.csv")
+clim.seas=read.csv("data/NiwotClimateFilled.csv")
+dat.all= read.csv("data/HopperData_Sept2019.csv")
+repro= read.csv("data/Levy_FemaleGradientDataGrasshopper.csv")
 
 specs= c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes")
 
+setwd("out/")
+
 #---------------------
-#Figure 1. Climate trends
+#Figure 2. Climate trends
 
 elevs.sites= c("NOAA", "A1","B1","C1","D1")
 elevs= c(1672, 2134, 2591, 3048, 3566)
@@ -61,13 +60,8 @@ clim.plot.anom.gs= ggplot(data=clim.seas[clim.seas$Seas=="gs",], aes(x=Year, y =
   scale_shape_manual(values=c(16,1))+ 
   guides(fill = "none")
 
-#Save climate figure
-#setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperBodysize/figures/")
-
-#Save figure 1
-pdf("Fig1_Climate_gs.pdf",height = 6, width = 8)
+#Save figure 2
+pdf("figures/Fig2_Climate_gs.pdf",height = 6, width = 8)
 clim.plot.gs + clim.plot.anom.gs + plot_annotation(tag_levels = 'a')
 dev.off()
 
@@ -115,8 +109,8 @@ clim.plot.anom.sum= ggplot(data=clim.seas[clim.seas$Seas=="summer",], aes(x=Year
   scale_shape_manual(values=c(16,1))+ 
   guides(fill = "none")
 
-#Save figure sup
-pdf("FigED2_Climate_sum.pdf",height = 6, width = 8)
+#Save supplementary figure S5
+pdf("figures/S5Fig_Climate_sum.pdf",height = 6, width = 8)
 clim.plot.sum + clim.plot.anom.sum + plot_annotation(tag_levels = 'a')
 dev.off()
 
@@ -142,7 +136,8 @@ anova(mod.lm)
 plot_model(mod.lm, type = "pred", terms = c("elev_cs", "Year_cs"), show.data=FALSE)
 
 #===============================================
-#Figure 2. Historic and current elevation gradient all sites
+#Figure 3. Historic and current elevation gradient all sites
+
 dodge <- position_dodge(width = 100)
 jdodge <- position_jitterdodge(dodge.width = 100, jitter.width=100)
 
@@ -174,6 +169,69 @@ bs.sum$se= bs.sum$sd / sqrt(bs.sum$N)
 #make dataframe with labels
 sdf= data.frame(x=-1, y=1, lab=specs, SpTord=c(1,2,1,2,1,2), SpTiming=c(stv[c(1,1,2,2,3,3)]), elev=1768, vjust=1)
 sdf$SpTiming<- factor(sdf$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
+
+#---------
+#normalize to mean during historic period
+bs.hist= ddply(bs.all[bs.all$time=="historic",], c("Species"), summarise,
+               N    = length(Mean_Femur),
+               mean = mean(Mean_Femur),
+               sd   = sd(Mean_Femur) )
+bs.hist$se= bs.hist$sd / sqrt(bs.hist$N)
+
+bs.percent= bs.all
+match1<- match(bs.percent$Species, bs.hist$Species)
+bs.percent$Femur.per= (bs.percent$Mean_Femur - bs.hist$mean[match1])/ bs.hist$mean[match1]
+
+bs.sum.per= ddply(bs.percent, c("Species", "elev", "SpTiming", "SpTord", "Sex","time","SexTime"), summarise,
+                  N    = length(Femur.per),
+                  mean = mean(Femur.per),
+                  sd   = sd(Femur.per) )
+bs.sum.per$se= bs.sum.per$sd / sqrt(bs.sum.per$N)
+
+plot_fe<- function(species) {
+  elev.plot= ggplot(data=bs.percent[bs.percent$Species==species,], aes(x=elev, y = Femur.per, group= SexTime, color=time, fill=time)) +
+    geom_point(position=jdodge, aes(shape=Sex))+
+    theme_bw()+ geom_smooth(method="lm", se=FALSE, aes(lty=Sex), show.legend = FALSE)+
+    geom_violin(aes(group=group),alpha=0.6, width=400, position=dodge, scale="width")+
+    scale_fill_manual(values= c("darkorange", "cadetblue"))+
+    scale_color_manual(values= c("darkorange", "cadetblue"))+
+    scale_shape_manual(values=c(21,24,25))+
+    xlab("Elevation (m)")+
+    ylab("Femur length differential")+
+    labs(title=substitute(italic(x), list(x=species)))+
+    ylim(-0.25,0.3) #+xlim(1500, 4000)
+  
+  elev.plot + 
+    geom_errorbar(data=bs.sum.per[bs.sum.per$Species==species,], position=position_dodge(width = 100), aes(x=elev, y=mean, ymin=mean-se, ymax=mean+se), width=0, col="black")+
+    geom_point(data=bs.sum.per[bs.sum.per$Species==species,], position=position_dodge(width = 100), aes(x=elev, y = mean, shape=Sex), size=3, col="black")
+  #+geom_label(label=species, x=2000, y=12, color="black", label.size=0.5)
+}
+
+#combine in patchwork
+spec_patch <- plot_fe(specs[1]) +plot_fe(specs[3]) +plot_fe(specs[5]) +
+  plot_fe(specs[2]) +plot_fe(specs[4]) +plot_fe(specs[6]) +
+  plot_layout(ncol = 3, guides="collect") & ylab(NULL) & xlab(NULL) & theme(plot.margin = margin(5.5, 5.5, 0, 0))
+
+spec_patch<- wrap_elements(spec_patch)+
+  plot_annotation(title = "   nymphal diapauser           early season                     late season",
+                  caption= "Elevation (m)") &
+  theme(plot.title = element_text(size = rel(1.5) ),
+        plot.caption = element_text(vjust = 1, hjust = 0.5, size = rel(1.5) ) )
+
+spec_patch<- wrap_elements(spec_patch)+
+  labs(tag = "Femur length differential") +
+  theme(
+    plot.tag = element_text(size = rel(1.5), angle = 90),
+    plot.tag.position = "left"
+  )
+
+#save
+pdf("figures/Fig3_both_percent.pdf",height = 8, width = 10)
+spec_patch
+dev.off()
+
+#------
+#Raw values for supplement
 
 plot_fe<- function(species) {
   elev.plot= ggplot(data=bs.all[bs.all$Species==species,], aes(x=elev, y = Mean_Femur, group= SexTime, color=time, fill=time)) +
@@ -212,7 +270,7 @@ spec_patch<- wrap_elements(spec_patch)+
   )
 
 #save
-pdf("Fig2_both.pdf",height = 8, width = 10)
+pdf("figures/S4Fig_both.pdf",height = 8, width = 10)
 spec_patch
 dev.off()
 
@@ -305,9 +363,7 @@ stat.mat$sig[stat.mat$p.value<0.001]="***"
 stat.mat[,c(2:4,6:7)]= round(stat.mat[,c(2:4,6:7)],2)
 stat.mat$var= rownames(stat.mat)
 
-#setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
-#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/out/")
-write_csv( stat.mat, 'species_slope.csv')
+#write_csv( stat.mat, 'species_slope.csv')
 
 #--------------
 #Fig analysis
@@ -421,8 +477,8 @@ clim.mod.fig.m= plot_model(c.mod.lmer.m, type = "pred", terms = c("Tmo.anom_cs",
 
 #update model plots
 time.mod.fig<- time.mod.fig+ theme_bw()+
-  scale_color_viridis_d(name="time period")+
-  scale_fill_viridis_d(name="time period")+
+  scale_fill_manual(name="time period", values= c("darkorange","cadetblue"))+
+  scale_color_manual(name="time period", values= c("darkorange","cadetblue"))+
   ylab("Femur length anomaly (mm)")+ xlab("scaled Elevation (m)")
 
 clim.mod.fig<- clim.mod.fig+ theme_bw()+
@@ -465,7 +521,7 @@ clim.mod.fig.gs= clim.mod.fig.gs+ geom_hline(yintercept=0, linetype="dashed", co
 clim.mod.fig.gs.prev= clim.mod.fig.gs.prev+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #--------------
-#Figure 3
+#Figure 4
 #Anom plot without sex
 
 #plot mean and se
@@ -510,13 +566,13 @@ anom.plot= anom.plot + geom_text(aes(x, y, label=lab), data=sdf, color="black")
 anom.plot= anom.plot+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-pdf("Fig3Anom_elev.pdf",height = 8, width = 8)
+pdf("figures/Fig4_Anom_elev.pdf",height = 8, width = 8)
 time.mod.fig + anom.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #===============================================
-#Figure 4
+#Figure 5
 
 #add mean and se
 bs.all$SexElev=paste(bs.all$Sex, bs.all$elev, sep="")
@@ -563,7 +619,7 @@ bs.tplot$SpTord[bs.tplot$Species %in% c("E. simplex","A. clavatus","C. pellucida
 bs.tplot$SpTord[bs.tplot$Species %in% c("X. corallipes","M. boulderensis","M. sanguinipes")]<- 2
 
 #=====================
-#Figure 4 growing season
+#Figure 5 growing season
 
 plot.Temps.gs=ggplot(data=bs.tplot, aes(x=Tgs, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(SpTord~SpTiming)+ #, scale="free_x"
@@ -583,13 +639,13 @@ sdf$x<- 12
 plot.Temps.gs= plot.Temps.gs + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-pdf("Fig4_gs.pdf",height = 8, width = 8)
+pdf("figures/Fig5_gs.pdf",height = 8, width = 8)
 clim.mod.fig.gs + plot.Temps.gs +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
-#Figure 4 equivalent for spring
+#Figure 5 equivalent for spring
 
 plot.Temps.all=ggplot(data=bs.tplot, aes(x=Tspr.mean, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(SpTord~SpTiming)+ #, scale="free_x"
@@ -615,13 +671,13 @@ plot.Temps.all= plot.Temps.all + geom_text(aes(x, y, label=lab), data=sdf)
 plot.Temps.all= plot.Temps.all+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-pdf("Fig4_spring.pdf",height = 8, width = 8)
+pdf("Fig5_spring.pdf",height = 8, width = 8)
 clim.mod.fig + plot.Temps.all +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
-#ED Figure 3: Figure 4 equivalent for summer
+#S6 Fig: Figure 5 equivalent for summer
 
 plot.Temps.sum=ggplot(data=bs.tplot, aes(x=Tsum.prev, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(SpTord~SpTiming)+ #, scale="free_x"
@@ -641,13 +697,13 @@ sdf$x<- 12
 plot.Temps.sum= plot.Temps.sum + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-pdf("FigED3_summer.pdf",height = 8, width = 8)
+pdf("figures/S6Fig_summer.pdf",height = 8, width = 8)
 clim.mod.fig.sum + plot.Temps.sum +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
-#Figure 4 equivalent for current summer
+#Figure 5 equivalent for current summer
 
 plot.Temps.sum.cur=ggplot(data=bs.tplot, aes(x=Tsum.mean, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(SpTord~SpTiming)+ #, scale="free_x"
@@ -667,13 +723,13 @@ sdf$x<- 12
 plot.Temps.sum.cur= plot.Temps.sum.cur + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-pdf("Fig4_summer_cur.pdf",height = 8, width = 8)
+pdf("Fig5_summer_cur.pdf",height = 8, width = 8)
 clim.mod.fig.sum.cur + plot.Temps.sum.cur +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
-#ED Figure 4: Figure 4 equivalent for month before adulthood
+#S7Fig: Figure 5 equivalent for month before adulthood
 
 plot.Temps.m=ggplot(data=bs.tplot, aes(x=Tmo, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(SpTord~SpTiming)+ #, scale="free_x"
@@ -693,13 +749,13 @@ sdf$x<- 12
 plot.Temps.m= plot.Temps.m + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-pdf("FigED4_month.pdf",height = 8, width = 8)
+pdf("figures/S7Fig_month.pdf",height = 8, width = 8)
 clim.mod.fig.m + plot.Temps.m +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
 
 #=====================
-#Figure 4 equivalent for previous growing season
+#Figure 5 equivalent for previous growing season
 
 plot.Temps.gs.prev=ggplot(data=bs.tplot, aes(x=Tgs.prev, y = mean.anom, group= elev, color=factor(elev)) )+
   facet_grid(SpTord~SpTiming)+ #, scale="free_x"
@@ -719,7 +775,7 @@ sdf$x<- 12
 plot.Temps.gs.prev= plot.Temps.gs.prev + geom_text(aes(x, y, label=lab), data=sdf)
 
 #plot together
-pdf("Fig4_gs_prev.pdf",height = 8, width = 8)
+pdf("Fig5_gs_prev.pdf",height = 8, width = 8)
 clim.mod.fig.gs.prev + plot.Temps.gs.prev +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -770,8 +826,6 @@ for(mod.k in c(11,3,12)){ #gs prev temperature
 #add time+ climate data
 aov.tab= cbind(aov.tab, stats)
 
-#setwd("/Users/laurenbuckley/Google Drive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
-#setwd("/Volumes/GoogleDrive/Shared drives/RoL_FitnessConstraints/projects/BodySize/figures/Nov2023/")
 #write_csv(aov.tab, 'anovas.csv')
 #write_csv(aov.tab, 'anovas_summer.csv')
 #write_csv(aov.tab, 'anovas_mo.csv')
@@ -910,7 +964,7 @@ phen.mod.fig<- phen.mod.fig+ theme_bw()+
 phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-pdf("FigED5_SizeDoy_surveys.pdf",height = 8, width = 8)
+pdf("figures/S8Fig_SizeDoy_surveys.pdf",height = 8, width = 8)
 phen.mod.fig + plot.doy +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -926,10 +980,9 @@ plot_model(mod.lmer, type = "pred", terms = c("doy.anom","Sex","Species"), show.
 plot_model(mod.lmer, type = "slope")
 
 #========================================
-#Figure 5: All specimen data
+#Figure 6: All specimen data
 
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperBodysize/data/")
-bs.all= read.csv("AlexanderBodySize_wClimate.csv")
+bs.all= read.csv("data/AlexanderBodySize_wClimate.csv")
 
 #estimate anomaly
 bs.all$SpecElevSex= paste(bs.all$Species, bs.all$elev, bs.all$Sex, sep="")
@@ -1004,6 +1057,8 @@ bs.scaled <- transform(bs.all,
 bs.scaled$Species= factor(bs.scaled$Species, order=TRUE, levels=c("E. simplex","X. corallipes","A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"))
 
 #rename species timing
+stv<- c("nymphal diapauser","early season","late season")
+bs.scaled$SpTiming<- stv[match(bs.scaled$SpTiming, c("nymph","early","late"))]
 bs.scaled$SpTiming<- factor(bs.scaled$SpTiming, order=TRUE, levels=c("nymphal diapauser","early season","late season"))
 
 mod.lmer <- lmer(Femur.anom~doy.anom*elev_cs*SpTiming + #include time? #drop sex *Sex
@@ -1024,8 +1079,7 @@ phen.mod.fig<- phen.mod.fig+ theme_bw()+
 phen.mod.fig= phen.mod.fig+ geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5)
 
 #plot together
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperBodysize/figures/")
-pdf("Figure5_phenology.pdf",height = 8, width = 8)
+pdf("figures/Fig6_phenology.pdf",height = 8, width = 8)
 phen.mod.fig + bs.phen.yr.plot +plot_layout(ncol = 1, heights=c(1,2) )+ 
   plot_annotation(tag_levels = 'a')
 dev.off()
@@ -1043,7 +1097,7 @@ aov1[,c(2:3,5:7)]=round( aov1[,c(2:3,5:7)],2)
 write_csv( aov1, 'phenology_doy_anova.csv')
 
 #===============================================
-#Figure ED 6-7: Fitness analysis
+#S9-S10 Figures: Fitness analysis
 
 repro.l<- melt(repro[,c("ID","Species","Site","Femur_mm","Elevation_m","EggMass","ClutchMass_g","NOvarioles","PropFunctOvarioles")], id.vars = c("ID","Species","Site","Femur_mm","Elevation_m"))
 #order species
@@ -1061,8 +1115,7 @@ repro.plot= ggplot(data=repro.l, aes(y=value, x = Femur_mm, color=factor(Elevati
   xlab("Femur length (mm)")+ylab("")+
   theme(legend.position="bottom")+ guides(fill="none")
 
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperBodysize/figures/")
-pdf("FigED6_Repro.pdf",height = 8, width = 8)
+pdf("figures/S9Fig_Repro.pdf",height = 8, width = 8)
 repro.plot
 dev.off()
 
@@ -1131,7 +1184,7 @@ pmods <- wrap_elements(panel = pmods) +
   )
 
 #plot together
-pdf("FigED7_Repro_mod.pdf",height = 8, width = 8)
+pdf("figures/S10Fig_Repro_mod.pdf",height = 8, width = 8)
 pmods
 dev.off()
 
